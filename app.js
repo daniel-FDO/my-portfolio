@@ -229,7 +229,18 @@ if (identityOpening) {
 }
 const header = document.querySelector("#site-header");
 header.innerHTML = `<div class="topbar"><a class="brand" href="./index.html" aria-label="Home"><span class="brand-dot">D</span><span>DANIEL FASAN</span></a><nav class="nav-links" aria-label="Main navigation">${nav.map(([name, url, id]) => `<a class="nav-link" href="${url}" ${page === id ? 'aria-current="page"' : ""}>${name}</a>`).join("")}</nav><div class="theme-control"><button class="theme-toggle" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Choose visual mode"><span class="theme-glyph" aria-hidden="true"></span><span class="theme-current">DAY</span></button><div class="theme-menu" hidden><div class="theme-menu-label">VISUAL MODE</div><button type="button" data-theme-choice="day">DAY</button><button type="button" data-theme-choice="studio">STUDIO</button><button type="button" data-theme-choice="night">NIGHT</button></div></div><div class="nav-end"><button class="sound-toggle" type="button" aria-pressed="false" aria-label="Play background music"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span>Music off</span></button><a class="nav-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello ↗</a><button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div>`;
-document.body.insertAdjacentHTML("beforeend", `<aside class="music-player" aria-label="Music player" aria-hidden="true"><div class="music-player-top"><span class="music-now"><i class="music-eq" aria-hidden="true"><b></b><b></b><b></b></i> NOW PLAYING</span><button class="music-collapse" type="button" aria-label="Collapse music player">−</button></div><div class="music-track-title" aria-live="polite">INNER LIGHTS</div><div class="music-track-count">01 / 02</div><div class="music-progress-row"><span class="music-time-current">0:00</span><input class="music-seek" type="range" min="0" max="1000" value="0" aria-label="Seek through track"><span class="music-time-total">0:00</span></div><div class="music-player-controls"><button type="button" class="music-previous" aria-label="Previous track">‹</button><button type="button" class="music-play" aria-label="Play">▶</button><button type="button" class="music-next" aria-label="Next track">›</button><label class="music-volume-label" aria-label="Volume"><span aria-hidden="true">VOL</span><input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.68" aria-label="Volume"></label></div><div class="music-status" role="status" aria-live="polite"></div></aside>`);
+document.body.insertAdjacentHTML("beforeend", `<aside class="music-player" aria-label="Music player" aria-hidden="true" inert>
+  <div class="music-player-top"><span class="music-now"><i class="music-eq" aria-hidden="true"><b></b><b></b><b></b></i> NOW PLAYING</span><button class="music-collapse" type="button" aria-label="Collapse music player" aria-expanded="true" aria-controls="music-details">−</button></div>
+  <div class="music-track-info" aria-live="polite"><div class="music-track-title"></div><div class="music-track-artist"></div></div>
+  <div class="music-player-controls"><button type="button" class="music-previous" aria-label="Previous track">‹</button><button type="button" class="music-play" aria-label="Play">▶</button><button type="button" class="music-next" aria-label="Next track">›</button><span class="music-track-count"></span></div>
+  <div class="music-details" id="music-details"><div class="music-details-inner">
+    <div class="music-progress-row"><span class="music-time-current">0:00</span><input class="music-seek" type="range" min="0" max="1000" value="0" aria-label="Seek through track"><span class="music-time-total">0:00</span></div>
+    <div class="music-options"><button class="music-shuffle" type="button" aria-label="Shuffle" aria-pressed="false" title="Shuffle">⤨</button><button class="music-repeat" type="button" aria-label="Repeat playlist" title="Repeat playlist">↻</button><button class="music-mute" type="button" aria-label="Mute" aria-pressed="false">VOL</button><input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.68" aria-label="Volume"><button class="music-queue-toggle" type="button" aria-expanded="false" aria-controls="music-queue">QUEUE</button></div>
+    <div class="music-identity"><img class="music-cover" alt="DF: IN MOTION cover" hidden><div><strong>DF: IN MOTION</strong><span>PORTFOLIO SOUNDTRACK · <span class="music-library-count"></span></span></div></div>
+    <div class="music-queue-panel" id="music-queue" inert><ol class="music-queue" aria-label="DF: IN MOTION playlist"></ol></div>
+    <div class="music-status" role="status" aria-live="polite"></div>
+  </div></div>
+</aside>`);
 
 const themeNames = ["day", "studio", "night"];
 const themePalette = { day: "#F3F1EA", studio: "#D4D3CE", night: "#101111" };
@@ -680,29 +691,154 @@ menuToggle.addEventListener("click", () => {
   menuToggle.textContent = open ? "×" : "☰";
 });
 
-// Playback state comes directly from the audio element; no analyser sits in the sound path.
+// A single, event-driven audio element, independent of all scroll/scene animation.
 const soundToggle = document.querySelector(".sound-toggle");
 const musicPlayer = document.querySelector(".music-player");
 const playlist = [
-  { title: "INNER LIGHTS", src: "./assets/inner-lights.mp4" },
-  { title: "BAD BUNNY - SI VEO A TU MAMÁ", src: "./assets/bad-bunny-si-veo-a-tu-mama.mp3" },
+  {
+    "title": "INNER LIGHTS",
+    "artist": "",
+    "src": "./assets/music/Inner Lights.mp4"
+  },
+  {
+    "title": "SI VEO A TU MAMÁ",
+    "artist": "Bad Bunny",
+    "src": "./assets/bad-bunny-si-veo-a-tu-mama.mp3"
+  },
+  {
+    "title": "Agent Sale",
+    "artist": "La Rvfleuze",
+    "src": "./assets/music/Agent Sale - La Rvfleuze.mp3"
+  },
+  {
+    "title": "GRIS METALLIQUE",
+    "artist": "M2R",
+    "src": "./assets/music/GRIS METALLIQUE - M2R.mp3"
+  },
+  {
+    "title": "melodrama",
+    "artist": "disiz, Theodora",
+    "src": "./assets/music/melodrama - disiz, Theodora.mp3"
+  },
+  {
+    "title": "Omote",
+    "artist": "Yuki Chiba",
+    "src": "./assets/music/Omote - Yuki Chiba.mp3"
+  },
+  {
+    "title": "PARISIENNE",
+    "artist": "GIMS, La Mano 1.9",
+    "src": "./assets/music/PARISIENNE - GIMS, La Mano 1.9.mp3"
+  },
+  {
+    "title": "Solo",
+    "artist": "Future",
+    "src": "./assets/music/Solo - Future.mp3"
+  },
+  {
+    "title": "SOLO STEPPIN CRETE BOY",
+    "artist": "Lil Yachty",
+    "src": "./assets/music/SOLO STEPPIN CRETE BOY - Lil Yachty.mp3"
+  },
+  {
+    "title": "Soñar",
+    "artist": "Morad",
+    "src": "./assets/music/Soñar - Morad.mp3"
+  },
+  {
+    "title": "Talk of the Town",
+    "artist": "Fred again...",
+    "src": "./assets/music/Talk of the Town - Fred again....mp3"
+  },
+  {
+    "title": "Way Too Self Aware",
+    "artist": "Ian Asher",
+    "src": "./assets/music/Way Too Self Aware - Ian Asher.mp3"
+  },
+  {
+    "title": "Whisper My Name",
+    "artist": "Drake",
+    "src": "./assets/music/Whisper My Name - Drake.mp3"
+  }
 ];
+// Set cover to a real asset URL here when artwork is supplied. No placeholder request.
+const playlistConfig = { name: "DF: IN MOTION", cover: null };
+const MUSIC_STORAGE_KEY = "df-in-motion-v1";
+let savedMusic = {};
+try { savedMusic = JSON.parse(localStorage.getItem(MUSIC_STORAGE_KEY)) || {}; } catch { /* Storage is optional. */ }
 const soundtrack = new Audio();
 soundtrack.preload = "metadata";
-soundtrack.volume = 0.68;
-let trackIndex = 0;
-let failedTracks = new Set();
-let seekDragging = false;
+soundtrack.volume = Number.isFinite(savedMusic.volume) ? Math.max(0, Math.min(1, savedMusic.volume)) : 0.68;
+soundtrack.muted = savedMusic.muted === true;
+let trackIndex = Number.isInteger(savedMusic.index) && playlist[savedMusic.index] ? savedMusic.index : 0;
+let resumePosition = Number.isFinite(savedMusic.position) ? Math.max(0, savedMusic.position) : 0;
+let shuffle = savedMusic.shuffle === true;
+let repeat = ["off", "playlist", "song"].includes(savedMusic.repeat) ? savedMusic.repeat : "playlist";
+const failedTracks = new Set();
+let shuffleBag = [];
+let trackHistory = [];
+let wantsPlayback = false;
+let playbackRequest = 0;
+let lastSaved = 0;
+let titleTimer;
 const musicTitle = musicPlayer.querySelector(".music-track-title");
+const musicArtist = musicPlayer.querySelector(".music-track-artist");
+const musicInfo = musicPlayer.querySelector(".music-track-info");
 const musicCount = musicPlayer.querySelector(".music-track-count");
 const musicSeek = musicPlayer.querySelector(".music-seek");
 const musicCurrent = musicPlayer.querySelector(".music-time-current");
 const musicTotal = musicPlayer.querySelector(".music-time-total");
 const musicPlay = musicPlayer.querySelector(".music-play");
 const musicStatus = musicPlayer.querySelector(".music-status");
+const musicVolume = musicPlayer.querySelector(".music-volume");
+const musicShuffle = musicPlayer.querySelector(".music-shuffle");
+const musicRepeat = musicPlayer.querySelector(".music-repeat");
+const musicMute = musicPlayer.querySelector(".music-mute");
+const musicQueueToggle = musicPlayer.querySelector(".music-queue-toggle");
+const musicQueuePanel = musicPlayer.querySelector(".music-queue-panel");
+const musicDetails = musicPlayer.querySelector(".music-details");
+const musicCollapse = musicPlayer.querySelector(".music-collapse");
+const queueButtons = playlist.map((track, index) => {
+  const row = document.createElement("li");
+  const button = document.createElement("button");
+  button.type = "button";
+  const number = document.createElement("span");
+  number.className = "music-queue-number";
+  number.textContent = String(index + 1).padStart(2, "0");
+  const label = document.createElement("span");
+  label.textContent = track.title;
+  if (track.artist) {
+    const artist = document.createElement("small");
+    artist.textContent = track.artist;
+    label.append(artist);
+  }
+  button.append(number, label);
+  button.addEventListener("click", () => {
+    shuffleBag = [];
+    trackHistory = [];
+    loadTrack(index);
+    if (shuffle) refillShuffleBag();
+    startMusic();
+  });
+  row.append(button);
+  musicPlayer.querySelector(".music-queue").append(row);
+  return button;
+});
+if (playlistConfig.cover) {
+  const cover = musicPlayer.querySelector(".music-cover");
+  cover.addEventListener("error", () => { cover.hidden = true; });
+  cover.src = playlistConfig.cover;
+  cover.hidden = false;
+}
 function formatMusicTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+}
+function saveMusicState() {
+  try {
+    localStorage.setItem(MUSIC_STORAGE_KEY, JSON.stringify({ index: trackIndex, position: resumePosition || soundtrack.currentTime || 0, volume: soundtrack.volume, muted: soundtrack.muted, shuffle, repeat }));
+  } catch { /* Playback works with blocked/full storage. */ }
+  lastSaved = Date.now();
 }
 function syncMusicState() {
   const playing = !soundtrack.paused && !soundtrack.ended && !soundtrack.error;
@@ -713,103 +849,215 @@ function syncMusicState() {
   musicPlay.setAttribute("aria-label", playing ? "Pause" : "Play");
   document.body.classList.toggle("music-on", playing);
 }
-function updateTrackLabel() {
-  musicTitle.textContent = playlist[trackIndex].title;
-  musicTitle.animate?.([{ transform: "translate3d(0,5px,0)", opacity: 0.35 }, { transform: "translate3d(0,0,0)", opacity: 1 }], { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)" });
-  musicCount.textContent = `${String(trackIndex + 1).padStart(2, "0")} / ${String(playlist.length).padStart(2, "0")}`;
-  musicSeek.value = "0";
-  musicCurrent.textContent = "0:00";
-  musicTotal.textContent = "0:00";
+function updateTrackLabel(animate = true) {
+  clearTimeout(titleTimer);
+  const setTitle = () => {
+    musicTitle.textContent = playlist[trackIndex].title;
+    musicTitle.title = playlist[trackIndex].title;
+    musicArtist.textContent = playlist[trackIndex].artist;
+    musicArtist.hidden = !playlist[trackIndex].artist;
+    musicInfo.classList.remove("is-leaving");
+    if (animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) musicInfo.animate?.([{ opacity: 0, transform: "translateY(5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 140, easing: "ease-out" });
+  };
+  if (animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    musicInfo.classList.add("is-leaving");
+    titleTimer = setTimeout(setTitle, 130);
+  } else setTitle();
+  const available = playlist.length - failedTracks.size;
+  const ordinal = playlist.slice(0, trackIndex + 1).filter((_, i) => !failedTracks.has(i)).length;
+  musicCount.textContent = `${String(ordinal).padStart(2, "0")} / ${String(available).padStart(2, "0")}`;
+  musicPlayer.querySelector(".music-library-count").textContent = `${available} TRACKS`;
+  queueButtons.forEach((button, i) => {
+    button.classList.toggle("is-current", i === trackIndex);
+    button.setAttribute("aria-current", i === trackIndex ? "true" : "false");
+    button.disabled = failedTracks.has(i);
+    button.title = failedTracks.has(i) ? "Unavailable in this browser" : playlist[i].title;
+  });
+}
+function setMusicCollapsed(collapsed) {
+  musicPlayer.classList.toggle("is-collapsed", collapsed);
+  musicDetails.inert = collapsed;
+  musicCollapse.setAttribute("aria-label", collapsed ? "Expand music player" : "Collapse music player");
+  musicCollapse.setAttribute("aria-expanded", String(!collapsed));
+  musicCollapse.textContent = collapsed ? "+" : "−";
 }
 function showMusicPlayer() {
+  if (!musicPlayer.classList.contains("is-open")) setMusicCollapsed(matchMedia("(max-width: 600px)").matches);
   musicPlayer.classList.add("is-open");
   musicPlayer.setAttribute("aria-hidden", "false");
-  const collapsed = matchMedia("(max-width: 600px)").matches;
-  musicPlayer.classList.toggle("is-collapsed", collapsed);
-  musicPlayer.querySelector(".music-collapse").setAttribute("aria-label", collapsed ? "Expand music player" : "Collapse music player");
+  musicPlayer.inert = false;
 }
-async function playTrack(index, attemptFallback = true) {
-  trackIndex = (index + playlist.length) % playlist.length;
-  failedTracks = new Set();
+function loadTrack(index, position = 0) {
+  playbackRequest++;
   soundtrack.pause();
-  soundtrack.src = playlist[trackIndex].src;
+  trackIndex = index;
+  resumePosition = position;
+  soundtrack.src = playlist[index].src;
   soundtrack.load();
+  musicSeek.value = "0";
+  musicCurrent.textContent = formatMusicTime(position);
+  musicTotal.textContent = "0:00";
   updateTrackLabel();
-  musicStatus.textContent = "";
+  saveMusicState();
+}
+async function startMusic() {
   showMusicPlayer();
+  wantsPlayback = true;
+  if (failedTracks.has(trackIndex)) { skipFailedTrack(); return; }
+  const request = ++playbackRequest;
   try {
     await soundtrack.play();
-    syncMusicState();
-    return true;
+    if (request === playbackRequest) syncMusicState();
   } catch (error) {
+    if (request !== playbackRequest || error.name === "AbortError") return;
+    if (error.name === "NotAllowedError") {
+      wantsPlayback = false;
+      musicStatus.textContent = "Press play to continue.";
+    } else markFailedTrack();
     syncMusicState();
-    if (attemptFallback && playlist.length > 1) return tryNextAvailable(trackIndex);
-    musicStatus.textContent = error?.name === "NotAllowedError" ? "Playback needs a click to start." : "UNAVAILABLE";
-    return false;
   }
 }
-async function tryNextAvailable(failedIndex) {
-  failedTracks.add(failedIndex);
-  if (failedTracks.size >= playlist.length) {
-    musicStatus.textContent = "UNAVAILABLE";
-    soundtrack.pause();
-    syncMusicState();
-    return false;
+function pauseMusic() {
+  wantsPlayback = false;
+  playbackRequest++;
+  soundtrack.pause();
+  saveMusicState();
+}
+function skipFailedTrack() {
+  for (let step = 1; step <= playlist.length; step++) {
+    const next = (trackIndex + step) % playlist.length;
+    if (!failedTracks.has(next)) {
+      loadTrack(next);
+      if (wantsPlayback) startMusic();
+      return;
+    }
   }
-  const next = (failedIndex + 1) % playlist.length;
-  trackIndex = next;
-  soundtrack.src = playlist[next].src;
-  soundtrack.load();
-  updateTrackLabel();
-  try {
-    await soundtrack.play();
-    syncMusicState();
-    return true;
-  } catch {
-    return tryNextAvailable(next);
+  pauseMusic();
+  musicStatus.textContent = "No playable tracks available.";
+}
+function markFailedTrack() {
+  if (failedTracks.has(trackIndex)) return;
+  failedTracks.add(trackIndex);
+  musicStatus.textContent = `Unavailable: ${[...failedTracks].map(i => playlist[i].src.split("/").pop()).join(", ")}`;
+  updateTrackLabel(false);
+  skipFailedTrack();
+}
+function refillShuffleBag() {
+  shuffleBag = playlist.map((_, i) => i).filter(i => i !== trackIndex && !failedTracks.has(i));
+  for (let i = shuffleBag.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffleBag[i], shuffleBag[j]] = [shuffleBag[j], shuffleBag[i]];
   }
+}
+function nextTrack(automatic = false) {
+  if (automatic && repeat === "song") {
+    soundtrack.currentTime = 0;
+    startMusic();
+    return;
+  }
+  let next;
+  if (shuffle) {
+    shuffleBag = shuffleBag.filter(i => !failedTracks.has(i));
+    if (!shuffleBag.length) {
+      if (automatic && repeat === "off") { pauseMusic(); return; }
+      refillShuffleBag();
+    }
+    next = shuffleBag.shift() ?? trackIndex;
+  } else {
+    next = playlist.findIndex((_, i) => i > trackIndex && !failedTracks.has(i));
+    if (next < 0) {
+      if (automatic && repeat === "off") { pauseMusic(); return; }
+      next = playlist.findIndex((_, i) => !failedTracks.has(i));
+    }
+  }
+  if (next < 0) return;
+  trackHistory.push(trackIndex);
+  if (trackHistory.length > 200) trackHistory.shift();
+  loadTrack(next);
+  startMusic();
+}
+function syncMusicOptions() {
+  musicShuffle.setAttribute("aria-pressed", String(shuffle));
+  musicRepeat.textContent = repeat === "song" ? "↻¹" : "↻";
+  musicRepeat.dataset.active = String(repeat !== "off");
+  musicRepeat.setAttribute("aria-label", `Repeat ${repeat}`);
+  musicRepeat.title = `Repeat ${repeat}`;
+  musicMute.textContent = soundtrack.muted ? "MUTE" : "VOL";
+  musicMute.setAttribute("aria-label", soundtrack.muted ? "Unmute" : "Mute");
+  musicMute.setAttribute("aria-pressed", String(soundtrack.muted));
+  musicVolume.value = String(soundtrack.volume);
 }
 soundtrack.addEventListener("play", syncMusicState);
 soundtrack.addEventListener("pause", syncMusicState);
-soundtrack.addEventListener("ended", () => playTrack(trackIndex + 1));
-soundtrack.addEventListener("error", () => {
-  if (!musicPlayer.classList.contains("is-open") || soundtrack.paused || failedTracks.has(trackIndex)) return;
-  soundtrack.pause();
-  tryNextAvailable(trackIndex);
-});
+soundtrack.addEventListener("ended", () => nextTrack(true));
+soundtrack.addEventListener("error", markFailedTrack);
 soundtrack.addEventListener("loadedmetadata", () => {
   musicTotal.textContent = formatMusicTime(soundtrack.duration);
+  if (resumePosition && Number.isFinite(soundtrack.duration)) soundtrack.currentTime = Math.min(resumePosition, Math.max(0, soundtrack.duration - 0.1));
+  resumePosition = 0;
 });
 soundtrack.addEventListener("timeupdate", () => {
-  if (!seekDragging) musicSeek.value = String(soundtrack.duration ? Math.round(soundtrack.currentTime / soundtrack.duration * 1000) : 0);
+  musicSeek.value = String(Number.isFinite(soundtrack.duration) && soundtrack.duration > 0 ? Math.round(soundtrack.currentTime / soundtrack.duration * 1000) : 0);
   musicCurrent.textContent = formatMusicTime(soundtrack.currentTime);
+  if (Date.now() - lastSaved > 2000) saveMusicState();
 });
-soundToggle.addEventListener("click", () => {
-  if (soundtrack.paused || soundtrack.ended) playTrack(trackIndex);
-  else soundtrack.pause();
+soundtrack.addEventListener("volumechange", () => { syncMusicOptions(); saveMusicState(); });
+const toggleMusic = () => { if (soundtrack.paused || soundtrack.ended) startMusic(); else pauseMusic(); };
+soundToggle.addEventListener("click", toggleMusic);
+musicPlay.addEventListener("click", toggleMusic);
+musicPlayer.querySelector(".music-next").addEventListener("click", () => nextTrack());
+musicPlayer.querySelector(".music-previous").addEventListener("click", () => {
+  if (soundtrack.currentTime > 3) { soundtrack.currentTime = 0; startMusic(); return; }
+  let previous;
+  if (shuffle) {
+    previous = trackHistory.pop() ?? trackIndex;
+    shuffleBag = shuffleBag.filter(i => i !== previous);
+    if (previous !== trackIndex) shuffleBag.unshift(trackIndex);
+  } else {
+    for (let step = 1; step <= playlist.length; step++) {
+      const candidate = (trackIndex - step + playlist.length) % playlist.length;
+      if (!failedTracks.has(candidate)) { previous = candidate; break; }
+    }
+  }
+  if (previous !== undefined) { loadTrack(previous); startMusic(); }
 });
-musicPlay.addEventListener("click", () => {
-  if (soundtrack.paused || soundtrack.ended) playTrack(trackIndex);
-  else soundtrack.pause();
+musicCollapse.addEventListener("click", () => setMusicCollapsed(!musicPlayer.classList.contains("is-collapsed")));
+musicInfo.addEventListener("click", () => { if (musicPlayer.classList.contains("is-collapsed")) setMusicCollapsed(false); });
+musicQueueToggle.addEventListener("click", () => {
+  const open = musicQueueToggle.getAttribute("aria-expanded") !== "true";
+  musicQueueToggle.setAttribute("aria-expanded", String(open));
+  musicQueuePanel.classList.toggle("is-open", open);
+  musicQueuePanel.inert = !open;
 });
-musicPlayer.querySelector(".music-next").addEventListener("click", () => playTrack(trackIndex + 1));
-musicPlayer.querySelector(".music-previous").addEventListener("click", () => playTrack(trackIndex - 1));
-musicPlayer.querySelector(".music-collapse").addEventListener("click", () => {
-  musicPlayer.classList.toggle("is-collapsed");
-  const collapsed = musicPlayer.classList.contains("is-collapsed");
-  musicPlayer.querySelector(".music-collapse").setAttribute("aria-label", collapsed ? "Expand music player" : "Collapse music player");
-  musicPlayer.querySelector(".music-collapse").textContent = collapsed ? "+" : "−";
+musicShuffle.addEventListener("click", () => {
+  shuffle = !shuffle;
+  trackHistory = [];
+  shuffleBag = [];
+  if (shuffle) refillShuffleBag();
+  syncMusicOptions(); saveMusicState();
 });
+musicRepeat.addEventListener("click", () => {
+  repeat = { off: "playlist", playlist: "song", song: "off" }[repeat];
+  syncMusicOptions(); saveMusicState();
+});
+musicMute.addEventListener("click", () => { soundtrack.muted = !soundtrack.muted; });
+musicVolume.addEventListener("input", () => { soundtrack.volume = Number(musicVolume.value); soundtrack.muted = false; });
 musicSeek.addEventListener("input", () => {
-  seekDragging = true;
   if (Number.isFinite(soundtrack.duration)) {
+    resumePosition = 0;
     soundtrack.currentTime = soundtrack.duration * Number(musicSeek.value) / 1000;
     musicCurrent.textContent = formatMusicTime(soundtrack.currentTime);
+    saveMusicState();
   }
 });
-musicSeek.addEventListener("change", () => { seekDragging = false; });
-musicPlayer.querySelector(".music-volume").addEventListener("input", (event) => { soundtrack.volume = Number(event.currentTarget.value); });
-updateTrackLabel();
+window.addEventListener("pagehide", saveMusicState);
+document.addEventListener("visibilitychange", () => { if (document.hidden) saveMusicState(); });
+loadTrack(trackIndex, resumePosition);
+if (shuffle) refillShuffleBag();
+updateTrackLabel(false);
+syncMusicOptions();
+syncMusicState();
+
 
 // Press-and-hold / drag interactions make project artwork respond to touch too.
 let pressTimer;
