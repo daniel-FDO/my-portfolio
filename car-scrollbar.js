@@ -48,10 +48,20 @@
       add("CONTACT", document.querySelector(".home-contact"), "contact");
     } else if (page === "projects") {
       add("WORK", intro, "projects");
-      document.querySelectorAll(".project-card").forEach((card, index) => {
-        const [number, name] = projects[index] || [];
-        if (number) add(`${number} / ${name}`, card, "projects");
-      });
+      const archive = document.querySelector(".archive-journey");
+      if (archive) {
+        const start = pageTop(archive);
+        const travel = Math.max(0, archive.offsetHeight - innerHeight);
+        const chapters = [["01", "PORCHLIGHT"], ["02", "TICKET"], ["03", "DIGITALBANK"], ["04", "FRONT-END"], ["05", "PYTHON / DATA"]];
+        chapters.forEach(([number, name], index) => {
+          add(`${number} / ${name}`, archive, "projects", start + travel * index / (chapters.length - 1));
+        });
+      } else {
+        document.querySelectorAll(".project-card").forEach((card, index) => {
+          const [number, name] = projects[index] || [];
+          if (number) add(`${number} / ${name}`, card, "projects");
+        });
+      }
     } else if (page === "about") {
       add("ABOUT", document.querySelector(".about-hero"), "about");
       add("EDUCATION", document.querySelector(".info-panel:nth-child(1)"), "about");

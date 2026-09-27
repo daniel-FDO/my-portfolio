@@ -187,10 +187,10 @@ const nav = [
   ["Contact", "./contact.html", "contact"],
 ];
 
-function preview(kind, full = false) {
+function preview(kind, full = false, numberOverride = "") {
   const item = projects.find((project) => project.art === kind);
   if (!item) return "";
-  return `<div class="preview preview-photo ${kind}${full ? " full-preview" : ""}" aria-label="${item.name} supplied screenshot"><img src="./assets/${item.image}" alt="${item.name} website screenshot" loading="lazy" draggable="false"><span class="image-label">${item.number} / ${item.category}</span><span class="image-corner" aria-hidden="true">↗</span></div>`;
+  return `<div class="preview preview-photo ${kind}${full ? " full-preview" : ""}" aria-label="${item.name} supplied screenshot"><img src="./assets/${item.image}" alt="${item.name} website screenshot" loading="lazy" draggable="false"><span class="image-label">${numberOverride || item.number} / ${item.category}</span><span class="image-corner" aria-hidden="true">↗</span></div>`;
 }
 
 function projectCard(project, index, feature = false) {
@@ -327,7 +327,54 @@ if (page === "home") {
     .join("");
   scene.innerHTML = `<section class="home-hero"><div class="hero-copy shell"><div class="eyebrow">MY WORK · MY JOURNEY · MY IDEAS</div><h1 class="display hero-title" aria-label="Daniel Fasan"><span class="line name-line"><span>DANIEL</span></span><span class="line name-line"><span class="accent">FASAN.</span></span></h1><div class="hero-subrow"><div><p>I’m an aspiring IT professional who learns by building. I enjoy turning ideas into useful websites and applications, and exploring the technology behind them — from data to hardware.</p><div class="hero-actions"><a class="button button-light" href="#work-traverse">Explore my work <span>↗</span></a><a class="button button-outline" href="./about.html">More about me <span>↗</span></a></div></div></div></div><div class="hero-orbit"><span class="orbit-mark" aria-hidden="true"></span><button class="orbit-card" type="button" data-notebook aria-expanded="false" aria-label="Open Daniel's digital notebook"></button></div><div class="hero-lines" aria-hidden="true"><i></i><i></i><i></i></div><div class="hero-hint"><span class="hint-wheel">↓</span> Scroll to explore</div></section><section class="project-intro shell"><div><div class="eyebrow">My projects · scroll to explore</div><h2>Things I've built.</h2></div><p>Projects I've built while exploring web development, software and digital systems.</p></section><section class="scroll-stage" id="work-traverse" aria-label="My five projects"><div class="scroll-pinned"><div class="project-presentation">${homeScenes}</div><div class="rail-footer shell"><span class="project-counter" aria-live="polite">01 <i>—</i> ${String(projects.length).padStart(2, "0")}</span><div class="rail-progress" role="progressbar" aria-label="Project journey" aria-valuemin="1" aria-valuemax="${projects.length}" aria-valuenow="1"><i></i></div><div class="scene-steps" aria-label="Choose a project">${projects.map((project, index) => `<button type="button" data-project-step="${index}" aria-label="Go to project ${project.number}: ${project.name}" aria-current="${index === 0 ? "step" : "false"}">${project.number}</button>`).join("")}</div><a class="button button-dark" href="./projects.html">All my projects <span>↗</span></a></div></div></section><section class="home-band"><div class="shell"><div class="eyebrow">A little about me</div><div class="snapshot-grid"><h2>Curious by<br>nature.<br>Building by doing.</h2><div class="snapshot-cards"><article class="snapshot-card" tabindex="0"><span class="snapshot-number">01</span><span class="snapshot-indicator"></span><small>Current focus</small><strong>Software development</strong><p>Studying at EKC Canterbury College.</p></article><article class="snapshot-card" tabindex="0"><span class="snapshot-number">02</span><span class="snapshot-indicator"></span><small>Learning through</small><strong>Python · JavaScript</strong><p>Web development, software and data.</p></article><article class="snapshot-card" tabindex="0"><span class="snapshot-number">03</span><span class="snapshot-indicator"></span><small>On placement</small><strong>Kent County Council</strong><p>Dover Library · visitor support and library operations.</p></article><article class="snapshot-card" tabindex="0"><span class="snapshot-number">04</span><span class="snapshot-indicator"></span><small>Exploring next</small><strong>Cybersecurity · AI</strong><p>Interested in computer science, IT and emerging technology.</p></article></div></div></div></section><section class="home-contact"><div class="shell home-contact-inner"><div><div class="eyebrow">One more thing</div><h2>Have a project<br>or opportunity?</h2></div><a class="button button-light" href="mailto:${LINKS.email}" data-cursor="email">Say hello <span>↗</span></a></div></section>`;
 } else if (page === "projects") {
-  scene.innerHTML = `<section class="shell page-intro"><div class="eyebrow">Selected work</div><h1 class="display">Made to<br>move ideas.</h1><p>Five projects across community support, careers, money, play and practical tools. Pick one to open its story.</p></section><section class="shell project-grid">${projects.map((project, i) => projectCard(project, i)).join("")}</section>`;
+  const byId = (id) => projects.find((project) => project.id === id);
+  const archiveMain = [
+    {
+      project: byId("porchlight"),
+      title: "PORCHLIGHT SUPPORT FINDER",
+      description: "A multi-page hub for support services, locations and Google Maps links, practical guidance, donations and volunteering.",
+      tech: "HTML · CSS · JavaScript",
+    },
+    {
+      project: byId("ticket"),
+      title: "CONFERENCE TICKET GENERATOR",
+      description: "A JavaScript-powered ticket generator. Enter a name, email and GitHub username to create a personalised conference ticket.",
+      tech: "HTML · CSS · JavaScript",
+    },
+    {
+      project: byId("bank"),
+      title: "DIGITALBANK",
+      description: "A responsive digital banking landing page focused on layout, navigation and modern frontend styling.",
+      tech: "HTML · CSS · JavaScript",
+    },
+  ];
+  const archiveStage = (item, number, index) => `<article class="archive-scene archive-scene-project${item.project.id === "ticket" ? " archive-ticket" : item.project.id === "porchlight" ? " archive-porchlight" : " archive-bank"}" data-archive-scene="${index}" aria-hidden="${index === 0 ? "false" : "true"}"${index ? " inert" : ""}>
+    <div class="archive-stage-shell">
+      <a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number)}<span class="archive-window-corner" aria-hidden="true">↗</span></a>
+      <div class="archive-story"><div class="archive-story-kicker"><span>${number}</span><i></i><span>CASE STUDY</span></div><h2>${item.title}</h2><p>${item.description}</p><div class="archive-tech">${item.tech}</div>${item.project.id === "ticket" ? `<div class="archive-ticket-sequence" aria-label="Name, email and GitHub username become a generated ticket"><span>NAME</span><i></i><span>EMAIL</span><i></i><span>GITHUB</span><i></i><b>TICKET</b></div>` : ""}<a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div>
+    </div>
+  </article>`;
+  const mainStages = archiveMain.map((item, index) => archiveStage(item, `0${index + 1}`, index)).join("");
+  const practiceProjects = [byId("rps"), byId("blueprint")];
+  const practiceStrip = practiceProjects.map((project) => `<a class="archive-strip-item" href="${project.url}" target="_blank" rel="noreferrer" aria-label="Visit ${project.name}" data-cursor="project"><span class="archive-strip-preview">${preview(project.art)}</span><span class="archive-strip-meta"><strong>${project.name}</strong><small>${project.tech}</small></span><b class="archive-strip-arrow" aria-hidden="true">↗</b></a>`).join("");
+  const indexItems = [
+    ["01", "PORCHLIGHT", "porchlight.webp"],
+    ["02", "TICKET", "desktop-design-ticket.webp"],
+    ["03", "DIGITALBANK", "digitalbank.webp"],
+    ["04", "FRONT-END", "rock-paper-scissors.webp"],
+    ["05", "PYTHON / DATA", ""],
+  ];
+  const projectIndex = indexItems.map(([number, label, image], index) => `<button type="button" class="archive-index-item" data-archive-go="${index}" aria-label="Scroll to ${number} ${label}"${image ? ` style="--archive-thumb:url('./assets/${image}')"` : ""}><i>${number}</i><span>${label}</span></button>`).join("");
+  scene.innerHTML = `<div class="archive-page">
+    <section class="archive-intro shell"><div class="archive-intro-copy"><div class="eyebrow">PROJECT ARCHIVE · 2026</div><h1 class="display archive-title">PROJECTS</h1><p>Things I’ve built while learning, experimenting and developing.</p></div><div class="archive-peeks" aria-hidden="true"><span class="archive-peek archive-peek-one"><img src="./assets/porchlight.webp" alt=""></span><span class="archive-peek archive-peek-two"><img src="./assets/desktop-design-ticket.webp" alt=""></span><span class="archive-peek archive-peek-three"><img src="./assets/digitalbank.webp" alt=""></span><b>01 → 05</b></div></section>
+    <nav class="archive-index" aria-label="Project index">${projectIndex}</nav>
+    <div class="archive-progress" aria-live="polite"><b>01</b><i>/</i><span>05</span></div>
+    <section class="archive-journey" aria-label="Five project chapters"><svg class="archive-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g></svg><div class="archive-pinned"><div class="archive-presentation">${mainStages}
+      <article class="archive-scene archive-scene-practice" data-archive-scene="3" aria-hidden="true" inert><div class="archive-practice-layout"><div class="archive-story"><div class="archive-story-kicker"><span>04</span><i></i><span>COLLECTION</span></div><h2>FRONT-END PRACTICE</h2><p>Responsive layouts, forms, DOM work and JavaScript challenges, with the Ticket Generator and Digitalbank featured as standalone case studies above.</p><div class="archive-tech">HTML · CSS · JavaScript</div><small class="archive-practice-note">A few builds from the archive</small></div><div class="archive-strip" aria-label="Front-end project previews">${practiceStrip}</div></div></article>
+      <article class="archive-scene archive-scene-data" data-archive-scene="4" aria-hidden="true" inert><div class="archive-data-layout"><div class="archive-data-board" aria-label="Python data workflow"><div class="archive-board-top"><span>WORKFLOW / 05</span><span>PYTHON + DATA</span></div><div class="data-node data-node-python"><b>Py</b><span>PYTHON</span></div><div class="data-branch"></div><div class="data-tools"><span>PANDAS</span><span>MATPLOTLIB</span><span>SQLITE</span></div><div class="data-flow"><i>HANDLE</i><b>→</b><i>FILTER</i><b>→</b><i>VISUALISE</i></div><div class="archive-board-foot">TEST · DEBUG · REFINE</div></div><div class="archive-story"><div class="archive-story-kicker"><span>05</span><i></i><span>TOOLS IN PRACTICE</span></div><h2>PYTHON / DATA PROJECTS</h2><p>Practical work with data handling, filtering, visualisation, testing, debugging and SQLite.</p><div class="archive-tech">Python · pandas · matplotlib · SQLite</div></div></div></article>
+      </div><div class="archive-current-label"><span>SCROLL TO EXPLORE</span><i></i><strong>01 / PORCHLIGHT</strong></div></div></section>
+    <section class="archive-end shell"><div><div class="eyebrow">MORE TO EXPLORE</div><h2>From projects<br>to what’s next.</h2></div><div class="archive-end-links"><a href="./about.html">About me <span>↗</span></a><a href="./experience.html">Experience <span>↗</span></a><a href="./contact.html">Let’s connect <span>↗</span></a></div></section>
+  </div>`;
 } else if (page === "about") {
   scene.innerHTML = `<section class="shell about-hero"><div><div class="eyebrow">About me · digital / IT</div><h1 class="display">Curious by<br>nature.<br><span>Building by doing.</span></h1></div><div><p class="about-note">I’m studying Digital Software Development and learning through hands-on IT and web projects.</p><p class="about-note">I like making clear interfaces, solving practical problems and finding out how the technology underneath works.</p></div></section><section class="shell"><div class="about-collage reveal" aria-label="A moving composition of design notes"><div class="collage-orbit"><span class="collage-orbit-dot"></span></div><div class="collage-paper"><small>Digital / IT · Creative technology</small><strong>Make the<br>next thing<br>clearer.</strong><i></i></div></div></section><section class="shell about-sections"><article class="info-panel reveal"><div class="eyebrow">Education</div><h2>T Level · Digital Software Development</h2><p>Year 2 · EKC Canterbury College · Sep 2025 — Present</p><p>Before that: BTEC Level 2 IT / ICT · Double Award: Merit/Pass.</p><div class="about-stamp" aria-hidden="true">DESIGN<br>· BUILD ·</div></article><article class="info-panel reveal"><div class="eyebrow">Tools I’m learning</div><h2>From interface to data.</h2><div class="skill-bag"><button class="skill-chip" draggable="true">Python</button><button class="skill-chip" draggable="true">JavaScript</button><button class="skill-chip" draggable="true">HTML</button><button class="skill-chip" draggable="true">CSS</button><button class="skill-chip" draggable="true">GitHub</button><button class="skill-chip" draggable="true">VS Code</button><button class="skill-chip" draggable="true">pandas</button><button class="skill-chip" draggable="true">matplotlib</button><button class="skill-chip" draggable="true">SQLite</button><button class="skill-chip" draggable="true">Microsoft Office</button><button class="skill-chip" draggable="true">Testing</button><button class="skill-chip" draggable="true">Windows / Linux</button><button class="skill-chip" draggable="true">PC troubleshooting</button></div></article><article class="info-panel reveal"><div class="eyebrow">Learning & achievements</div><h2>Practice with purpose.</h2><ul><li>Cisco Hardware Basics</li><li>NHS DigiData</li><li>IT and cybersecurity workshops</li><li>MIT App Inventor quiz app</li></ul><p>OpenLearn · Springpod · Speakers for Schools</p></article><article class="info-panel reveal"><div class="eyebrow">Where I’m going</div><h2>IT · Support · Security.</h2><p>Career interests: IT support, IT technician roles, digital support, computer science, cybersecurity and technology.</p><div class="skill-bag"><span class="skill-chip">Sport &amp; fitness</span><span class="skill-chip">Fitness</span><span class="skill-chip">Music production</span><span class="skill-chip">Self-development</span></div></article></section>`;
 } else if (page === "experience") {
@@ -404,39 +451,66 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// Route changes use a single physical shutter, shared across all five pages.
+// Cross-page travel uses an image panel drawn from the current page, then
+// reverses the same panel on arrival. Links still perform ordinary navigation.
 const shutter = document.querySelector(".page-shutter");
+const portalLabel = (document.querySelector("[data-page]")?.dataset.page || page)
+  .replace(/-/g, " ").toUpperCase();
+function setPortalGeometry(rect) {
+  const left = Math.round(rect.left), top = Math.round(rect.top);
+  shutter.style.setProperty("--portal-left", `${left}px`);
+  shutter.style.setProperty("--portal-top", `${top}px`);
+  shutter.style.setProperty("--portal-width", `${Math.max(72, Math.round(rect.width))}px`);
+  shutter.style.setProperty("--portal-height", `${Math.max(48, Math.round(rect.height))}px`);
+  shutter.style.setProperty("--portal-origin-x", `${Math.round(left + rect.width / 2)}px`);
+  shutter.style.setProperty("--portal-origin-y", `${Math.round(top + rect.height / 2)}px`);
+}
+function portalPanel(image, label) {
+  shutter.replaceChildren();
+  const panel = document.createElement("div");
+  panel.className = "route-portal-panel";
+  if (image) panel.style.setProperty("--route-image", `url("${image.replaceAll('"', "%22")}")`);
+  const caption = document.createElement("span");
+  caption.className = "route-portal-caption";
+  caption.textContent = label || portalLabel;
+  panel.append(caption);
+  shutter.append(panel);
+}
 try {
-  if (sessionStorage.getItem("df-page-push") === "1") {
-    sessionStorage.removeItem("df-page-push");
-    const origin = (sessionStorage.getItem("df-portal") || "50,50").split(",");
-    shutter.style.setProperty("--portal-x", `${origin[0]}px`);
-    shutter.style.setProperty("--portal-y", `${origin[1]}px`);
+  const arrival = JSON.parse(sessionStorage.getItem("df-route-portal") || "null");
+  if (arrival) {
+    sessionStorage.removeItem("df-route-portal");
+    setPortalGeometry(arrival.rect);
+    portalPanel(arrival.image, arrival.label);
     shutter.classList.add("arriving");
-    setTimeout(() => shutter.classList.remove("arriving"), 520);
+    window.setTimeout(() => shutter.classList.remove("arriving"), 850);
   }
 } catch {}
 document.querySelectorAll('a[href$=".html"]').forEach((link) =>
   link.addEventListener("click", (event) => {
     const destination = new URL(link.href, location.href);
-    if (
-      destination.origin !== location.origin ||
-      destination.pathname === location.pathname
-    )
-      return;
+    if (event.defaultPrevented || destination.origin !== location.origin ||
+        destination.pathname === location.pathname || event.metaKey || event.ctrlKey ||
+        event.shiftKey || event.altKey || link.target === "_blank") return;
     event.preventDefault();
-    const x = Math.round(event.clientX || innerWidth / 2),
-      y = Math.round(event.clientY || innerHeight / 2);
-    shutter.style.setProperty("--portal-x", `${x}px`);
-    shutter.style.setProperty("--portal-y", `${y}px`);
+    const source = document.querySelector('.archive-scene:not([aria-hidden="true"]) .archive-window') ||
+      document.querySelector(".orbit-card") || document.querySelector(".project-visual") ||
+      document.querySelector(".about-collage") || document.querySelector(".timeline-item") ||
+      document.querySelector(".contact-emblem") || link;
+    const rect = source.getBoundingClientRect();
+    const cover = source.querySelector("img,video") || document.querySelector(".archive-window img, .project-visual img");
+    const image = cover?.currentSrc || cover?.src || cover?.getAttribute("poster") || "";
+    const rectData = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    setPortalGeometry(rectData);
+    portalPanel(image, portalLabel);
     try {
-      sessionStorage.setItem("df-page-push", "1");
-      sessionStorage.setItem("df-portal", `${x},${y}`);
+      sessionStorage.setItem("df-route-portal", JSON.stringify({ rect: rectData, image, label: portalLabel }));
+      sessionStorage.setItem("df-music-route", JSON.stringify({ time: soundtrack.currentTime || 0, playing: soundOn }));
     } catch {}
+    document.body.classList.add("route-leaving");
     shutter.classList.add("leaving");
-    setTimeout(() => {
-      location.href = destination.href;
-    }, 390);
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.setTimeout(() => { location.href = destination.href; }, reduced ? 180 : 700);
   }),
 );
 
@@ -517,6 +591,20 @@ const soundtrack = new Audio("./assets/inner-lights.mp4");
 soundtrack.loop = true;
 soundtrack.volume = 0.58;
 soundtrack.preload = "auto";
+try {
+  const routeMusic = JSON.parse(sessionStorage.getItem("df-music-route") || "null");
+  if (routeMusic) {
+    sessionStorage.removeItem("df-music-route");
+    if (routeMusic.playing) {
+      const resume = () => {
+        soundtrack.currentTime = Math.max(0, routeMusic.time || 0);
+        soundtrack.play().then(() => setMusicState(true)).catch(() => setMusicState(false));
+      };
+      if (soundtrack.readyState >= 1) resume();
+      else soundtrack.addEventListener("loadedmetadata", resume, { once: true });
+    }
+  }
+} catch {}
 let musicContext, musicAnalyser, musicSource, musicData, musicFrame;
 function setMusicState(on, message = "") {
   soundOn = on;
@@ -729,6 +817,104 @@ sceneButtons.forEach((button) =>
   }),
 );
 updateRail();
+
+// The Projects route is one scroll-driven archive: every chapter shares the same viewport mask.
+const archiveJourney = document.querySelector(".archive-journey");
+const archiveScenes = [...document.querySelectorAll("[data-archive-scene]")];
+const archiveProgress = document.querySelector(".archive-progress");
+const archiveIndexItems = [...document.querySelectorAll("[data-archive-go]")];
+const archiveNames = ["PORCHLIGHT", "TICKET", "DIGITALBANK", "FRONT-END", "PYTHON / DATA"];
+let archiveFrame = 0;
+function updateArchive() {
+  archiveFrame = 0;
+  if (!archiveJourney || !archiveScenes.length) return;
+  const bounds = archiveJourney.getBoundingClientRect();
+  const travel = Math.max(1, archiveJourney.offsetHeight - innerHeight);
+  archiveJourney.closest(".archive-page")?.classList.toggle("archive-nav-on", bounds.top < innerHeight * 0.82 && bounds.bottom > innerHeight * 0.18);
+  const progress = Math.min(1, Math.max(0, -bounds.top / travel));
+  const position = progress * (archiveScenes.length - 1);
+  const active = Math.min(archiveScenes.length - 1, Math.round(position));
+  const outgoing = Math.min(archiveScenes.length - 1, Math.floor(position));
+  const incoming = Math.min(archiveScenes.length - 1, outgoing + 1);
+  archiveScenes.forEach((item, index) => {
+    const enter = index === 0 ? 1 : Math.min(1, Math.max(0, position - index + 1));
+    const leave = Math.min(1, Math.max(0, position - index));
+    const left = (1 - enter) * 100;
+    const right = leave * 100;
+    item.style.setProperty("--archive-left", `${left}%`);
+    item.style.setProperty("--archive-right", `${right}%`);
+    item.style.setProperty("--archive-enter", enter.toFixed(3));
+    item.style.setProperty("--archive-window-scale", (0.89 + enter * 0.11).toFixed(3));
+    item.style.setProperty("--archive-story-bottom", `${(1 - enter) * 100}%`);
+    item.style.setProperty("--archive-story-y", `${(1 - enter) * 24}px`);
+    item.style.setProperty("--archive-x", `${(1 - enter) * 6 - leave * 4}vw`);
+    item.style.setProperty("--archive-scale", (0.965 + enter * 0.035 - leave * 0.025).toFixed(3));
+    item.style.zIndex = String(index === incoming ? 3 : index === outgoing ? 2 : 1);
+    item.classList.toggle("is-active", index === active);
+    item.setAttribute("aria-hidden", String(index !== active));
+    item.inert = index !== active;
+  });
+  const number = String(active + 1).padStart(2, "0");
+  archiveProgress?.querySelector("b")?.replaceChildren(number);
+  const currentLabel = document.querySelector(".archive-current-label strong");
+  if (currentLabel) currentLabel.textContent = `${number} / ${archiveNames[active]}`;
+  archiveIndexItems.forEach((button, index) => {
+    if (index === active) button.setAttribute("aria-current", "step");
+    else button.removeAttribute("aria-current");
+  });
+}
+window.addEventListener("scroll", () => {
+  if (archiveJourney && !archiveFrame) archiveFrame = requestAnimationFrame(updateArchive);
+}, { passive: true });
+window.addEventListener("resize", () => {
+  if (archiveJourney && !archiveFrame) archiveFrame = requestAnimationFrame(updateArchive);
+}, { passive: true });
+archiveIndexItems.forEach((button) => button.addEventListener("click", () => {
+  if (!archiveJourney) return;
+  const index = Number(button.dataset.archiveGo);
+  const bounds = archiveJourney.getBoundingClientRect();
+  const travel = Math.max(0, archiveJourney.offsetHeight - innerHeight);
+  window.scrollTo({
+    top: scrollY + bounds.top + travel * index / Math.max(1, archiveScenes.length - 1),
+    behavior: "smooth",
+  });
+}));
+updateArchive();
+
+// Native horizontal overflow stays in place for touch/trackpad; pointer drag adds a desktop option.
+const archiveStrip = document.querySelector(".archive-strip");
+if (archiveStrip) {
+  let stripPointer = null;
+  let stripStartX = 0;
+  let stripStartScroll = 0;
+  let stripDragged = false;
+  archiveStrip.addEventListener("pointerdown", (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    stripPointer = event.pointerId;
+    stripStartX = event.clientX;
+    stripStartScroll = archiveStrip.scrollLeft;
+    stripDragged = false;
+  });
+  archiveStrip.addEventListener("pointermove", (event) => {
+    if (stripPointer !== event.pointerId) return;
+    const delta = event.clientX - stripStartX;
+    if (Math.abs(delta) > 5) {
+      stripDragged = true;
+      archiveStrip.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    }
+    if (stripDragged) archiveStrip.scrollLeft = stripStartScroll - delta;
+  });
+  const releaseStrip = () => { stripPointer = null; };
+  archiveStrip.addEventListener("pointerup", releaseStrip);
+  archiveStrip.addEventListener("pointercancel", releaseStrip);
+  archiveStrip.addEventListener("click", (event) => {
+    if (!stripDragged) return;
+    event.preventDefault();
+    event.stopPropagation();
+    stripDragged = false;
+  }, true);
+}
 
 // A light image response and magnetic nudge make hover feel physical without tilting screenshots.
 document.querySelectorAll(".preview-photo").forEach((frame) =>
