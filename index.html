@@ -8,6 +8,13 @@
       try {
         document.documentElement.dataset.theme =
           localStorage.getItem("portfolio-theme") || "day";
+        if (
+          !matchMedia("(prefers-reduced-motion: reduce)").matches &&
+          !sessionStorage.getItem("df-identity-opening-seen")
+        ) {
+          document.documentElement.dataset.showIntro = "true";
+          sessionStorage.setItem("df-identity-opening-seen", "1");
+        }
       } catch {
         document.documentElement.dataset.theme = "day";
       }
@@ -25,9 +32,11 @@
     />
     <link rel="stylesheet" href="./styles.css" />
     <script src="./app.js" defer></script>
+    <script src="./car-scrollbar.js" defer></script>
   </head>
   <body>
     <div class="page-shutter" aria-hidden="true"></div>
+    <div class="identity-opening" aria-hidden="true"><span class="identity-initials">DF</span><span class="identity-name"><b>DANIEL</b><i>FASAN.</i></span></div>
     <header id="site-header"></header>
     <main id="scene"></main>
     <footer id="site-footer"></footer>
