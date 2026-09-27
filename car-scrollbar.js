@@ -10,7 +10,7 @@
   const road = document.createElement("aside");
   road.className = "journey-road";
   road.setAttribute("aria-label", "Portfolio journey scrollbar");
-  road.innerHTML = `<span class="road-caption" aria-hidden="true">JOURNEY</span><div class="road-track"><i class="road-centerline" aria-hidden="true"></i><div class="road-markers"></div><div class="road-car" role="scrollbar" tabindex="0" aria-label="Portfolio scroll position. Drag the car or use arrow keys." aria-controls="scene" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><svg class="road-car-art" viewBox="0 0 72 40" aria-hidden="true"><path class="car-body" d="M6 26h7.2l5.4-9.2c1.4-2.4 3.4-3.7 6.3-3.7h17.7c3.7 0 6.1 1.7 8.4 4.8l5.5 8.1h5.2c2.6 0 4.2 1.7 4.2 4v2.2h-8.1a7 7 0 0 0-13.6 0H28a7 7 0 0 0-13.6 0H6z"/><path class="car-window" d="m21.1 17.8-4.2 7h13.7v-9.2h-5.7c-1.8 0-3 .6-3.8 2.2zm12-.2v7.2h22.5l-5-6.1c-1.6-1.9-3.2-2.7-5.6-2.7z"/><path class="car-accent" d="M15 27.3h31.5v1.7H15z"/><path class="car-headlight" d="M62.4 26.1h2.1v2.1h-2.1z"/><circle class="car-wheel" cx="21.2" cy="31" r="4.3"/><circle class="car-wheel" cx="50.8" cy="31" r="4.3"/><g class="car-spokes"><path d="M21.2 28.7v4.6m-2.3-2.3h4.6"/></g><g class="car-spokes car-spokes-front"><path d="M50.8 28.7v4.6m-2.3-2.3h4.6"/></g></svg><span class="car-hit-label" aria-hidden="true">DRAG TO SCROLL</span></div><span class="road-coordinate road-coordinate-top" aria-hidden="true">00</span><span class="road-coordinate road-coordinate-bottom" aria-hidden="true">100</span></div>`;
+  road.innerHTML = `<span class="road-caption" aria-hidden="true">JOURNEY</span><div class="road-track"><i class="road-centerline" aria-hidden="true"></i><div class="road-markers"></div><div class="road-car" role="scrollbar" tabindex="0" aria-label="Portfolio scroll position. Drag the car or use arrow keys." aria-controls="scene" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><svg class="road-car-art" viewBox="0 0 144 64" aria-hidden="true"><defs><linearGradient id="fastback-paint" x1="0" x2=".85" y1="0" y2="1"><stop stop-color="var(--car-highlight,#a9aaa8)"/><stop offset=".44" stop-color="var(--car-body)"/><stop offset="1" stop-color="var(--car-shadow,#353738)"/></linearGradient><linearGradient id="fastback-glass" x1="0" x2="1" y1="0" y2="1"><stop stop-color="var(--car-glass,#192124)"/><stop offset="1" stop-color="var(--car-window)"/></linearGradient></defs><path class="car-body" fill="url(#fastback-paint)" d="M8 41.8c1.2-3.7 4.6-6.5 9.3-7.7l13.7-3.6 15.4-15.8c3.4-3.5 7.1-5.2 12.8-5.2h34.2c7 0 12.1 1.8 17.6 6.5l14 11.5 8.1 3.2c4.2 1.7 6.2 4.7 6.2 8.7v5.2h-15.5a12.2 12.2 0 0 0-23.8 0H49.2a12.2 12.2 0 0 0-23.8 0H8z"/><path class="car-window" fill="url(#fastback-glass)" d="m49.3 16.3-12.6 13h23V13h-5.8c-1.8 0-3.2.8-4.6 3.3zm14-3.3v16.3h48.1l-12-10.1c-4.4-3.7-8.3-6.2-15-6.2z"/><path class="car-glass-line" d="M60 14v15m3.3-15v15"/><path class="car-highlight" d="M19 35.6 42 30.1m26-17.4h17"/><path class="car-grille" d="M8.8 37.1h7.4v6.2H8.2m122.5-8.5 6.2 2.8v5.7h-9.4"/><path class="car-headlight" d="m10.4 35.1 7.9-2.2-1.2 3.5-7.4 2z"/><path class="car-taillight" d="m132.3 31.1 6.1 2.2v2.1l-5.4-1.5z"/><path class="car-accent" d="M22 45h25m50 0h16"/><circle class="car-wheel" cx="37.4" cy="45" r="11.1"/><circle class="car-wheel" cx="111" cy="45" r="11.1"/><circle class="car-hub" cx="37.4" cy="45" r="3.1"/><circle class="car-hub" cx="111" cy="45" r="3.1"/><g class="car-spokes"><path d="M37.4 35.1v19.8m-9.9-9.9h19.8m-17-7 14 14m0-14-14 14"/></g><g class="car-spokes car-spokes-front"><path d="M111 35.1v19.8m-9.9-9.9h19.8m-17-7 14 14m0-14-14 14"/></g><path class="car-splitter" d="M6.7 44.4h18.8m97.7 0h18.1"/></svg><span class="car-hit-label" aria-hidden="true">DRAG TO SCROLL</span></div><span class="road-coordinate road-coordinate-top" aria-hidden="true">00</span><span class="road-coordinate road-coordinate-bottom" aria-hidden="true">100</span></div>`;
   document.body.append(road);
   document.documentElement.classList.add("has-journey-road");
 
@@ -19,6 +19,14 @@
   const markersNode = road.querySelector(".road-markers");
   let anchors = [];
   let frame = 0;
+  let motionFrame = 0;
+  let currentCarY = 0;
+  let targetCarY = 0;
+  let carVelocity = 0;
+  let carTravel = 0;
+  let markers = [];
+  let previousNearest = -1;
+  let previousPercent = -1;
   let stopTimer = 0;
   let previousY = scrollY;
 
@@ -27,6 +35,7 @@
   }
 
   function buildAnchors() {
+    carTravel = Math.max(0, track.clientHeight - car.offsetHeight);
     const anchorsNext = [];
     const add = (label, element, region, top = null) => {
       if (!element && top === null) return;
@@ -85,6 +94,10 @@
     markersNode.innerHTML = anchors.map((anchor, index) =>
       `<button class="road-marker" type="button" style="--marker-index:${index}" aria-label="Go to ${anchor.label}" data-road-index="${index}"><i aria-hidden="true"></i><span aria-hidden="true">${anchor.label}</span></button>`,
     ).join("");
+    markers = [...markersNode.querySelectorAll(".road-marker")];
+    const pageMax = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    anchors.forEach((anchor, index) => markers[index]?.style.setProperty("--marker-y", `${Math.min(100, Math.max(0, anchor.top / pageMax * 100))}%`));
+    previousNearest = -1;
     update();
   }
 
@@ -92,19 +105,23 @@
     frame = 0;
     const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
     const progress = Math.min(1, Math.max(0, scrollY / max));
-    const travel = Math.max(0, track.clientHeight - car.offsetHeight);
-    car.style.setProperty("--car-y", `${travel * progress}px`);
-    car.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
+    targetCarY = carTravel * progress;
+    if (!motionFrame) motionFrame = requestAnimationFrame(animateCar);
+    const percent = Math.round(progress * 100);
+    if (percent !== previousPercent) {
+      car.setAttribute("aria-valuenow", String(percent));
+      previousPercent = percent;
+    }
     let nearest = 0;
     let nearestDistance = Infinity;
-    const markers = [...markersNode.querySelectorAll(".road-marker")];
     anchors.forEach((anchor, index) => {
       const distance = Math.abs(anchor.top - scrollY);
-      const markerPosition = Math.min(100, Math.max(0, anchor.top / max * 100));
-      markers[index]?.style.setProperty("--marker-y", `${markerPosition}%`);
       if (distance < nearestDistance) { nearestDistance = distance; nearest = index; }
     });
-    markers.forEach((marker, index) => marker.toggleAttribute("data-active", index === nearest));
+    if (nearest !== previousNearest) {
+      markers.forEach((marker, index) => marker.toggleAttribute("data-active", index === nearest));
+      previousNearest = nearest;
+    }
     road.dataset.region = anchors[nearest]?.region || "home";
 
     const delta = scrollY - previousY;
@@ -121,6 +138,27 @@
     }
   }
 
+  function animateCar(timestamp) {
+    const previous = animateCar.lastTime || timestamp;
+    const delta = Math.min(32, timestamp - previous) / 1000;
+    animateCar.lastTime = timestamp;
+    const frequency = 23;
+    const acceleration = frequency * frequency * (targetCarY - currentCarY) - 2 * .82 * frequency * carVelocity;
+    carVelocity += acceleration * delta;
+    currentCarY += carVelocity * delta;
+    const speed = Math.min(1, Math.abs(carVelocity) / 620);
+    car.style.setProperty("--car-suspension", `${(speed * 1.35).toFixed(2)}px`);
+    car.style.setProperty("--car-physics-tilt", `${Math.max(-1.5, Math.min(1.5, -carVelocity * .002))}deg`);
+    if (Math.abs(targetCarY - currentCarY) < 0.12 && Math.abs(carVelocity) < 1.8) {
+      currentCarY = targetCarY;
+      carVelocity = 0;
+      motionFrame = 0;
+    } else {
+      motionFrame = requestAnimationFrame(animateCar);
+    }
+    car.style.setProperty("--car-y", `${currentCarY}px`);
+  }
+
   let wheelAngle = 0;
   function roadCarLean(delta) {
     wheelAngle += delta * 1.3;
@@ -130,7 +168,8 @@
   function requestUpdate() {
     if (!frame) frame = requestAnimationFrame(update);
   }
-  window.addEventListener("scroll", requestUpdate, { passive: true });
+  if (window.addPortfolioScrollTask) window.addPortfolioScrollTask(update);
+  else window.addEventListener("scroll", requestUpdate, { passive: true });
   window.addEventListener("resize", () => { buildAnchors(); requestUpdate(); }, { passive: true });
   window.addEventListener("load", () => { buildAnchors(); requestUpdate(); }, { once: true });
 

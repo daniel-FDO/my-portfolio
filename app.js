@@ -183,10 +183,11 @@ const nav = document.documentElement.dataset.singlePage === "true"
   ? [["Home", "#home", "home"], ["About", "#about", "about"], ["Projects", "#projects", "projects"], ["Experience", "#experience", "experience"], ["Education", "#education", "education"], ["Contact", "#contact", "contact"]]
   : [["Home", "./index.html", "home"], ["Projects", "./projects.html", "projects"], ["About", "./about.html", "about"], ["Experience", "./experience.html", "experience"], ["Contact", "./contact.html", "contact"]];
 
-function preview(kind, full = false, numberOverride = "") {
+function preview(kind, full = false, numberOverride = "", deferImage = false) {
   const item = projects.find((project) => project.art === kind);
   if (!item) return "";
-  return `<div class="preview preview-photo ${kind}${full ? " full-preview" : ""}" aria-label="${item.name} supplied screenshot"><img src="./assets/${item.image}" alt="${item.name} website screenshot" loading="lazy" draggable="false"><span class="image-label">${numberOverride || item.number} / ${item.category}</span><span class="image-corner" aria-hidden="true">↗</span></div>`;
+  const imageAttribute = deferImage ? `data-src="./assets/${item.image}"` : `src="./assets/${item.image}"`;
+  return `<div class="preview preview-photo ${kind}${full ? " full-preview" : ""}" aria-label="${item.name} supplied screenshot"><img ${imageAttribute} alt="${item.name} website screenshot" loading="lazy" draggable="false"><span class="image-label">${numberOverride || item.number} / ${item.category}</span><span class="image-corner" aria-hidden="true">↗</span></div>`;
 }
 
 function projectCard(project, index, feature = false) {
@@ -199,6 +200,22 @@ function projectCard(project, index, feature = false) {
 const page = document.documentElement.dataset.page || "home";
 const singlePage = document.documentElement.dataset.singlePage === "true";
 document.body.classList.add("js-ready");
+const portfolioScrollTasks = new Set();
+let portfolioScrollFrame = 0;
+const portfolioScrollState = { y: window.scrollY, max: 1, progress: 0 };
+function schedulePortfolioScroll() {
+  if (portfolioScrollFrame) return;
+  portfolioScrollFrame = requestAnimationFrame(() => {
+    portfolioScrollFrame = 0;
+    portfolioScrollState.y = window.scrollY;
+    portfolioScrollState.max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    portfolioScrollState.progress = Math.min(1, Math.max(0, portfolioScrollState.y / portfolioScrollState.max));
+    portfolioScrollTasks.forEach((task) => task(portfolioScrollState));
+  });
+}
+window.addPortfolioScrollTask = (task) => portfolioScrollTasks.add(task);
+window.addEventListener("scroll", schedulePortfolioScroll, { passive: true });
+window.addEventListener("resize", schedulePortfolioScroll, { passive: true });
 const identityOpening = document.querySelector(".identity-opening");
 if (identityOpening) {
   if (document.documentElement.dataset.showIntro === "true") {
@@ -211,7 +228,8 @@ if (identityOpening) {
   }
 }
 const header = document.querySelector("#site-header");
-header.innerHTML = `<div class="topbar"><a class="brand" href="./index.html" aria-label="Home"><span class="brand-dot">D</span><span>DANIEL FASAN</span></a><nav class="nav-links" aria-label="Main navigation">${nav.map(([name, url, id]) => `<a class="nav-link" href="${url}" ${page === id ? 'aria-current="page"' : ""}>${name}</a>`).join("")}</nav><div class="theme-control"><button class="theme-toggle" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Choose visual mode"><span class="theme-glyph" aria-hidden="true"></span><span class="theme-current">DAY</span></button><div class="theme-menu" hidden><div class="theme-menu-label">VISUAL MODE</div><button type="button" data-theme-choice="day">DAY</button><button type="button" data-theme-choice="studio">STUDIO</button><button type="button" data-theme-choice="night">NIGHT</button></div></div><div class="nav-end"><button class="sound-toggle" aria-pressed="false" aria-label="Play background music"><span class="eq"><i></i><i></i><i></i></span><span>Music off</span></button><a class="nav-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello ↗</a><button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div>`;
+header.innerHTML = `<div class="topbar"><a class="brand" href="./index.html" aria-label="Home"><span class="brand-dot">D</span><span>DANIEL FASAN</span></a><nav class="nav-links" aria-label="Main navigation">${nav.map(([name, url, id]) => `<a class="nav-link" href="${url}" ${page === id ? 'aria-current="page"' : ""}>${name}</a>`).join("")}</nav><div class="theme-control"><button class="theme-toggle" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Choose visual mode"><span class="theme-glyph" aria-hidden="true"></span><span class="theme-current">DAY</span></button><div class="theme-menu" hidden><div class="theme-menu-label">VISUAL MODE</div><button type="button" data-theme-choice="day">DAY</button><button type="button" data-theme-choice="studio">STUDIO</button><button type="button" data-theme-choice="night">NIGHT</button></div></div><div class="nav-end"><button class="sound-toggle" type="button" aria-pressed="false" aria-label="Play background music"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span>Music off</span></button><a class="nav-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello ↗</a><button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div>`;
+document.body.insertAdjacentHTML("beforeend", `<aside class="music-player" aria-label="Music player" aria-hidden="true"><div class="music-player-top"><span class="music-now"><i class="music-eq" aria-hidden="true"><b></b><b></b><b></b></i> NOW PLAYING</span><button class="music-collapse" type="button" aria-label="Collapse music player">−</button></div><div class="music-track-title" aria-live="polite">INNER LIGHTS</div><div class="music-track-count">01 / 02</div><div class="music-progress-row"><span class="music-time-current">0:00</span><input class="music-seek" type="range" min="0" max="1000" value="0" aria-label="Seek through track"><span class="music-time-total">0:00</span></div><div class="music-player-controls"><button type="button" class="music-previous" aria-label="Previous track">‹</button><button type="button" class="music-play" aria-label="Play">▶</button><button type="button" class="music-next" aria-label="Next track">›</button><label class="music-volume-label" aria-label="Volume"><span aria-hidden="true">VOL</span><input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.68" aria-label="Volume"></label></div><div class="music-status" role="status" aria-live="polite"></div></aside>`);
 
 const themeNames = ["day", "studio", "night"];
 const themePalette = { day: "#F3F1EA", studio: "#D4D3CE", night: "#101111" };
@@ -347,7 +365,7 @@ if (page === "home") {
   ];
   const archiveStage = (item, number, index) => `<article class="archive-scene archive-scene-project${item.project.id === "ticket" ? " archive-ticket" : item.project.id === "porchlight" ? " archive-porchlight" : " archive-bank"}" data-archive-scene="${index}" aria-hidden="${index === 0 ? "false" : "true"}"${index ? " inert" : ""}>
     <div class="archive-stage-shell">
-      <a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number)}<span class="archive-window-corner" aria-hidden="true">↗</span></a>
+      <a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number, true)}<span class="archive-window-corner" aria-hidden="true">↗</span></a>
       <div class="archive-story"><div class="archive-story-kicker"><span>${number}</span><i></i><span>CASE STUDY</span></div><h2>${item.title}</h2><p>${item.description}</p><div class="archive-tech">${item.tech}</div>${item.project.id === "ticket" ? `<div class="archive-ticket-sequence" aria-label="Name, email and GitHub username become a generated ticket"><span>NAME</span><i></i><span>EMAIL</span><i></i><span>GITHUB</span><i></i><b>TICKET</b></div>` : ""}<a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div>
     </div>
   </article>`;
@@ -390,17 +408,43 @@ if (singlePage) {
     { project: projects.find((item) => item.id === "ticket"), title: "CONFERENCE TICKET GENERATOR", description: "Enter a name, email and GitHub username to create a personalised conference-style ticket.", tech: "HTML · CSS · JavaScript" },
     { project: projects.find((item) => item.id === "bank"), title: "DIGITALBANK", description: "A responsive digital banking landing page focused on layout, navigation and modern frontend styling.", tech: "HTML · CSS · JavaScript" },
   ];
-  const archiveStage = (item, number, index) => `<article class="archive-scene archive-scene-project${item.project.id === "ticket" ? " archive-ticket" : item.project.id === "porchlight" ? " archive-porchlight" : " archive-bank"}" data-archive-scene="${index}" aria-hidden="${index ? "true" : "false"}"${index ? " inert" : ""}><div class="archive-stage-shell"><a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number)}<span class="archive-window-corner" aria-hidden="true">↗</span></a><div class="archive-story"><div class="archive-story-kicker"><span>${number}</span><i></i><span>CASE STUDY</span></div><h2>${item.title}</h2><p>${item.description}</p><div class="archive-tech">${item.tech}</div>${item.project.id === "ticket" ? `<div class="archive-ticket-sequence" aria-label="Name, email and GitHub username become a generated ticket"><span>NAME</span><i></i><span>EMAIL</span><i></i><span>GITHUB</span><i></i><b>TICKET</b></div>` : ""}<a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div></div></article>`;
+  const archiveStage = (item, number, index) => `<article class="archive-scene archive-scene-project${item.project.id === "ticket" ? " archive-ticket" : item.project.id === "porchlight" ? " archive-porchlight" : " archive-bank"}" data-archive-scene="${index}" aria-hidden="${index ? "true" : "false"}"${index ? " inert" : ""}><div class="archive-stage-shell"><a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number, true)}<span class="archive-window-corner" aria-hidden="true">↗</span></a><div class="archive-story"><div class="archive-story-kicker"><span>${number}</span><i></i><span>CASE STUDY</span></div><h2>${item.title}</h2><p>${item.description}</p><div class="archive-tech">${item.tech}</div>${item.project.id === "ticket" ? `<div class="archive-ticket-sequence" aria-label="Name, email and GitHub username become a generated ticket"><span>NAME</span><i></i><span>EMAIL</span><i></i><span>GITHUB</span><i></i><b>TICKET</b></div>` : ""}<a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div></div></article>`;
+  const mainStages = archiveMain.map((item, index) => archiveStage(item, `0${index + 1}`, index)).join("");
   const practice = ["rps", "blueprint"].map((id) => projects.find((item) => item.id === id));
-  const practiceStrip = practice.map((item) => `<a class="archive-strip-item" href="${item.url}" target="_blank" rel="noreferrer" aria-label="Visit ${item.name}" data-cursor="project"><span class="archive-strip-preview">${preview(item.art)}</span><span class="archive-strip-meta"><strong>${item.name}</strong><small>${item.tech}</small></span><b class="archive-strip-arrow" aria-hidden="true">↗</b></a>`).join("");
-  const archiveNames = [["PORCHLIGHT", "porchlight.webp"], ["TICKET", "desktop-design-ticket.webp"], ["DIGITALBANK", "digitalbank.webp"], ["FRONT-END", "rock-paper-scissors.webp"], ["PYTHON / DATA", ""]];
-  const projectIndex = archiveNames.map(([name, image], index) => `<button type="button" class="archive-index-item" data-archive-go="${index}" aria-label="Scroll to project ${String(index + 1).padStart(2, "0")}: ${name}"${image ? ` style="--archive-thumb:url('./assets/${image}')"` : ""}><i>${String(index + 1).padStart(2, "0")}</i><span>${name}</span></button>`).join("");
-  const projectsChapter = `<section class="archive-page journey-chapter" id="projects" data-journey-section><div class="archive-intro shell"><div class="archive-intro-copy"><div class="eyebrow">03 / PROJECT ARCHIVE</div><h2 class="display archive-title">PROJECTS</h2><p>Things I’ve built while learning, experimenting and developing.</p></div><div class="archive-peeks" aria-hidden="true"><span class="archive-peek archive-peek-one"><img src="./assets/porchlight.webp" alt="" loading="lazy"></span><span class="archive-peek archive-peek-two"><img src="./assets/desktop-design-ticket.webp" alt="" loading="lazy"></span><span class="archive-peek archive-peek-three"><img src="./assets/digitalbank.webp" alt="" loading="lazy"></span><b>01 → 05</b></div></div><nav class="archive-index" aria-label="Project index">${projectIndex}</nav><div class="archive-progress" aria-live="polite"><b>01</b><i>/</i><span>05</span></div><section class="archive-journey" aria-label="Five project chapters"><svg class="archive-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g></svg><div class="archive-pinned"><div class="archive-presentation">${archiveMain.map((item, index) => archiveStage(item, `0${index + 1}`, index)).join("")}<article class="archive-scene archive-scene-practice" data-archive-scene="3" aria-hidden="true" inert><div class="archive-practice-layout"><div class="archive-story"><div class="archive-story-kicker"><span>04</span><i></i><span>COLLECTION</span></div><h2>FRONT-END PRACTICE</h2><p>Responsive layouts, forms, DOM work and JavaScript challenges. Ticket Generator and Digitalbank are shown above as standalone case studies.</p><div class="archive-tech">HTML · CSS · JavaScript</div><small class="archive-practice-note">A few builds from the archive</small></div><div class="archive-strip" aria-label="Front-end project previews">${practiceStrip}</div></div></article><article class="archive-scene archive-scene-data" data-archive-scene="4" aria-hidden="true" inert><div class="archive-data-layout"><div class="archive-data-board" aria-label="Python data workflow"><div class="archive-board-top"><span>WORKFLOW / 05</span><span>PYTHON + DATA</span></div><div class="data-node data-node-python"><b>Py</b><span>PYTHON</span></div><div class="data-branch"></div><div class="data-tools"><span>PANDAS</span><span>MATPLOTLIB</span><span>SQLITE</span></div><div class="data-flow"><i>HANDLE</i><b>→</b><i>FILTER</i><b>→</b><i>VISUALISE</i></div><div class="archive-board-foot">TEST · DEBUG · REFINE</div></div><div class="archive-story"><div class="archive-story-kicker"><span>05</span><i></i><span>TOOLS IN PRACTICE</span></div><h2>PYTHON / DATA PROJECTS</h2><p>Practical work with data handling, filtering, visualisation, testing, debugging and SQLite.</p><div class="archive-tech">Python · pandas · matplotlib · SQLite</div></div></div></article></div><div class="archive-current-label"><span>SCROLL TO EXPLORE</span><i></i><strong>01 / PORCHLIGHT</strong></div></div></section><div class="archive-end shell"><div><div class="eyebrow">MORE TO EXPLORE</div><h2>From projects<br>to what’s next.</h2></div><div class="archive-end-links"><a href="#about">About me <span>↗</span></a><a href="#experience">Experience <span>↗</span></a><a href="#contact">Let’s connect <span>↗</span></a></div></div><div class="journey-chapter-no">03 <span>PROJECTS</span></div></section>`;
+  const practiceStrip = practice.map((item) => `<a class="archive-strip-item" href="${item.url}" target="_blank" rel="noreferrer" aria-label="Visit ${item.name}" data-cursor="project"><span class="archive-strip-preview">${preview(item.art, false, "", true)}</span><span class="archive-strip-meta"><strong>${item.name}</strong><small>${item.tech}</small></span><b class="archive-strip-arrow" aria-hidden="true">↗</b></a>`).join("");
+  const archiveNames = ["PORCHLIGHT SUPPORT FINDER", "CONFERENCE TICKET GENERATOR", "DIGITALBANK", "FRONT-END MENTOR PROJECTS", "PYTHON / DATA PROJECTS"];
+  const archiveFolders = [
+    ["01", "porchlight-support-finder", "Porchlight Support Finder", "porchlight.webp"],
+    ["02", "conference-ticket-generator", "Conference Ticket Generator", "desktop-design-ticket.webp"],
+    ["03", "digitalbank", "Digitalbank", "digitalbank.webp"],
+    ["04", "frontend-mentor-projects", "Front-End Mentor Projects", "rock-paper-scissors.webp"],
+    ["05", "python-data-projects", "Python / Data Projects", "python-data-workflow.svg"],
+  ];
+  const projectIndex = archiveFolders.map(([number, folder, label, image], index) => `<button type="button" class="archive-index-item${index === 0 ? " is-selected" : ""}" style="--folder-index:${index}" data-archive-go="${index}" data-command="${folder}"${image ? ` data-preview-source="./assets/${image}"` : ""} aria-label="Enter project ${number}: ${label}" aria-current="${index === 0 ? "step" : "false"}"><i>${number}</i><span>${folder}/</span><b aria-hidden="true">&#8599;</b></button>`).join("");
+  const projectsChapter = `<section class="archive-page journey-chapter" id="projects" data-journey-section>
+    <div class="archive-intro shell">
+      <div class="archive-intro-copy"><div class="eyebrow">03 / CODE TO CREATION</div><h2 class="display archive-title">PROJECTS</h2><p>Things I&rsquo;ve built while learning, experimenting and developing.</p><div class="archive-intro-note"><span>05 DIRECTORIES</span><i></i><span>SCROLL TO EXPLORE</span></div></div>
+      <div class="archive-terminal" aria-label="Daniel Fasan project workspace">
+        <div class="archive-terminal-head"><span class="terminal-lights" aria-hidden="true"><i></i><i></i><i></i></span><strong>DANIEL@PORTFOLIO</strong><span class="terminal-status"><i></i> WORKSPACE / ONLINE</span></div>
+        <div class="archive-terminal-path"><b>~/projects</b><span>LOCAL INDEX / 05</span></div>
+        <div class="archive-terminal-command" aria-hidden="true"><span>$</span> ls --projects</div>
+        <nav class="archive-file-list" aria-label="Project directories">${projectIndex}</nav>
+        <div class="archive-terminal-prompt" aria-hidden="true"><span>$</span> open <b class="archive-command-target">porchlight-support-finder</b><i class="terminal-cursor">_</i></div>
+        <div class="archive-terminal-foot"><span>SCROLL OR SELECT A DIRECTORY</span><span class="terminal-identity">DF <i>+</i> &#123; &#125;</span></div>
+        <div class="archive-cursor-preview" aria-hidden="true"><img alt=""><span>PROJECT 01</span></div>
+      </div>
+    </div>
+    <div class="archive-progress" aria-live="polite"><b>01</b><i>/</i><span>05</span></div>
+    <section class="archive-journey" aria-label="Five project chapters"><svg class="archive-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g></svg><div class="archive-pinned"><div class="archive-presentation">${mainStages}
+        <article class="archive-scene archive-scene-practice" data-archive-scene="3" aria-hidden="true" inert><div class="archive-practice-layout"><div class="archive-story"><div class="archive-story-kicker"><span>04</span><i></i><span>COLLECTION</span></div><h2>FRONT-END MENTOR PROJECTS</h2><p>Interactive builds and responsive interfaces from my frontend practice.</p><div class="archive-tech">HTML &middot; CSS &middot; JavaScript</div><small class="archive-practice-note">A few builds from the archive</small></div><div class="archive-strip" aria-label="Front-end project previews">${practiceStrip}</div></div></article>
+      <article class="archive-scene archive-scene-data" data-archive-scene="4" aria-hidden="true" inert><div class="archive-data-layout"><div class="archive-data-board" aria-label="Python data workflow"><div class="archive-board-top"><span>WORKFLOW / 05</span><span>PYTHON + DATA</span></div><div class="data-node data-node-python"><b>Py</b><span>PYTHON</span></div><div class="data-branch"></div><div class="data-tools"><span>PANDAS</span><span>MATPLOTLIB</span><span>SQLITE</span></div><div class="data-flow"><i>HANDLE</i><b>&rarr;</b><i>FILTER</i><b>&rarr;</b><i>VISUALISE</i></div><div class="archive-board-foot">TEST &middot; DEBUG &middot; REFINE</div></div><div class="archive-story"><div class="archive-story-kicker"><span>05</span><i></i><span>TOOLS IN PRACTICE</span></div><h2>PYTHON / DATA PROJECTS</h2><p>Practical work with data handling, filtering, visualisation, testing, debugging and SQLite.</p><div class="archive-tech">Python &middot; pandas &middot; matplotlib &middot; SQLite</div></div></div></article>
+      </div><div class="archive-current-label"><span>PROJECT MODE / SCROLL</span><i></i><strong>01 / PORCHLIGHT SUPPORT FINDER</strong></div></div></section>
+    <section class="archive-end shell"><div><div class="eyebrow">SYSTEM RETURN</div><h2>Back to the<br>main journey.</h2></div><div class="archive-end-links"><a href="#about">About me <span>&#8599;</span></a><a href="#experience">Experience <span>&#8599;</span></a><a href="#contact">Let&rsquo;s connect <span>&#8599;</span></a></div></section><div class="journey-chapter-no">03 <span>PROJECTS</span></div></section>`;
 
   const timelineItems = [work[1], work[0], ...work.slice(2)];
   const experience = `<section class="journey-experience journey-chapter" id="experience" data-journey-section><div class="shell journey-section-head"><div><div class="eyebrow">04 / EXPERIENCE</div><h2 class="display">Learning<br>in the real world.</h2></div><p>People, places and practical work that shape how I learn.</p></div><div class="shell timeline-wrap journey-timeline"><aside class="timeline-index"><div class="eyebrow">KENT COUNTY COUNCIL</div><h3>Dover Library</h3><p>Industry placement student</p></aside>${timelineMarkup(timelineItems)}</div><div class="journey-chapter-no">04 <span>EXPERIENCE</span></div></section>`;
   const education = `<section class="journey-education journey-chapter" id="education" data-journey-section><div class="shell journey-section-head"><div><div class="eyebrow">05 / EDUCATION + SKILLS</div><h2 class="display">Building my<br>foundations.</h2></div><p>Learning software development through study, projects and practice.</p></div><div class="shell journey-education-grid"><div class="education-path"><article class="education-node"><i>01</i><small>YEAR 2 / CURRENT</small><h3>T Level Digital Software Development</h3><p>EKC Canterbury College</p></article><article class="education-node"><i>02</i><small>PREVIOUS STUDY</small><h3>BTEC Level 2 IT / Extended Certificate in ICT</h3><p>Double Award: Merit/Pass</p></article></div><div class="skill-system"><div class="skill-system-head"><span>TOOLS / PRACTICE</span><span>01—12</span></div><div class="skill-nodes">${["HTML", "CSS", "JavaScript", "Python", "GitHub", "VS Code", "pandas", "matplotlib", "SQLite", "Windows / Linux", "PC hardware", "Troubleshooting"].map((name, index) => `<span class="skill-node" style="--skill-delay:${index * 35}ms" tabindex="0">${name}</span>`).join("")}</div><div class="skill-system-foot"><i></i> LEARN · TEST · REFINE</div></div></div><div class="journey-chapter-no">05 <span>EDUCATION / SKILLS</span></div></section>`;
-  const contact = `<section class="journey-contact journey-chapter" id="contact" data-journey-section><div class="shell contact-canvas"><div class="contact-copy"><div class="eyebrow">06 / THE DESTINATION</div><h2 class="display">Have a project<br>or opportunity?</h2><p>I’m always glad to connect about digital projects, learning opportunities and work that helps people.</p><a class="button button-light contact-mail-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello <span>↗</span></a></div><div class="contact-links"><a class="contact-link" href="mailto:${LINKS.email}" data-cursor="email"><span>Email<small>${LINKS.email}</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.instagram}" target="_blank" rel="noreferrer"><span>Instagram<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.linkedin}" target="_blank" rel="noreferrer"><span>LinkedIn<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.github}" target="_blank" rel="noreferrer"><span>GitHub<small>See what I’m building</small></span><span class="contact-symbol">↗</span></a></div><div class="contact-emblem" data-cursor="drag" role="img" aria-label="Daniel Fasan mark" tabindex="0"><video class="wall-video" autoplay muted loop playsinline poster="https://images.pexels.com/videos/8516677/free-video-8516677.jpg?auto=compress&cs=tinysrgb&w=1000"><source src="https://videos.pexels.com/video-files/8516677/8516677-hd_1080_1920_25fps.mp4" type="video/mp4"></video><strong>DF</strong><span class="drag-tip">Drag the mark</span></div></div><div class="journey-chapter-no">06 <span>CONTACT</span></div></section>`;
+  const contact = `<section class="journey-contact journey-chapter" id="contact" data-journey-section><div class="shell contact-canvas"><div class="contact-copy"><div class="eyebrow">06 / THE DESTINATION</div><h2 class="display">Have a project<br>or opportunity?</h2><p>I’m always glad to connect about digital projects, learning opportunities and work that helps people.</p><a class="button button-light contact-mail-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello <span>↗</span></a></div><div class="contact-links"><a class="contact-link" href="mailto:${LINKS.email}" data-cursor="email"><span>Email<small>${LINKS.email}</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.instagram}" target="_blank" rel="noreferrer"><span>Instagram<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.linkedin}" target="_blank" rel="noreferrer"><span>LinkedIn<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.github}" target="_blank" rel="noreferrer"><span>GitHub<small>See what I’m building</small></span><span class="contact-symbol">↗</span></a></div><div class="contact-core-wrap"><nav class="contact-core-actions" aria-label="Core destinations"><a href="#about" data-core-target="about">ABOUT</a><a href="#projects" data-core-target="projects">PROJECTS</a><a href="#contact" data-core-target="contact">CONTACT</a></nav><div class="contact-emblem" data-cursor="drag" role="button" aria-label="Drag the DF core to a destination" aria-describedby="core-readout" tabindex="0"><video class="wall-video" autoplay muted loop playsinline poster="https://images.pexels.com/videos/8516677/free-video-8516677.jpg?auto=compress&amp;cs=tinysrgb&amp;w=1000"><source src="https://videos.pexels.com/video-files/8516677/8516677-hd_1080_1920_25fps.mp4" type="video/mp4"></video><strong>DF</strong><span class="drag-tip">Drag me / route</span></div><div class="contact-core-readout" id="core-readout" aria-live="polite">DRAG DF INTO A DESTINATION</div></div></div><div class="journey-chapter-no">06 <span>CONTACT</span></div></section>`;
   scene.insertAdjacentHTML("beforeend", about + projectsChapter + experience + education + contact);
   const aboutLink = document.querySelector('.hero-actions a[href="./about.html"]');
   if (aboutLink) aboutLink.href = "#about";
@@ -473,9 +517,58 @@ if (singlePage) {
       timeline.style.setProperty("--timeline-draw", Math.max(0, Math.min(1, (innerHeight * .78 - rect.top) / Math.max(1, rect.height * .8))).toFixed(3));
     }
   };
-  let chapterFrame = 0;
-  window.addEventListener("scroll", () => { if (!chapterFrame) chapterFrame = requestAnimationFrame(() => { chapterFrame = 0; scrollChapterMotion(); }); }, { passive: true });
+  window.addPortfolioScrollTask(scrollChapterMotion);
   scrollChapterMotion();
+}
+
+const interactiveHeadings = [...document.querySelectorAll(".hero-title, .project-intro h2, .home-band h2, .journey-chapter h1, .journey-chapter h2, .journey-chapter h3, .contact-copy h2, .archive-title, .archive-story h2")];
+interactiveHeadings.forEach((heading) => {
+  heading.classList.add("interactive-heading");
+  if (heading.classList.contains("hero-title")) return;
+  let letterIndex = 0;
+  const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) if (walker.currentNode.nodeValue.trim()) textNodes.push(walker.currentNode);
+  textNodes.forEach((textNode) => {
+    const fragment = document.createDocumentFragment();
+    [...textNode.nodeValue].forEach((character) => {
+      if (/\s/.test(character)) fragment.append(document.createTextNode(character));
+      else {
+        const letter = document.createElement("span");
+        letter.className = "heading-letter";
+        letter.setAttribute("aria-hidden", "true");
+        letter.style.setProperty("--letter-index", letterIndex++);
+        letter.textContent = character;
+        fragment.append(letter);
+      }
+    });
+    textNode.replaceWith(fragment);
+  });
+  heading.setAttribute("aria-label", heading.textContent);
+});
+const heroName = document.querySelector(".hero-title");
+if (heroName && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  heroName.querySelectorAll(".name-line > span").forEach((word) => {
+    const label = word.textContent;
+    word.innerHTML = [...label].map((letter, index) => `<span class="magnetic-letter" style="--letter-index:${index}" aria-hidden="true">${letter === " " ? "&nbsp;" : letter}</span>`).join("");
+  });
+  const letters = [...heroName.querySelectorAll(".magnetic-letter")];
+  let letterBounds = [];
+  heroName.addEventListener("pointerenter", () => {
+    letterBounds = letters.map((letter) => letter.getBoundingClientRect());
+  });
+  heroName.addEventListener("pointermove", (event) => {
+    if (!matchMedia("(pointer:fine)").matches) return;
+    letters.forEach((letter, index) => {
+      const bounds = letterBounds[index];
+      const dx = event.clientX - (bounds.left + bounds.width / 2);
+      const dy = event.clientY - (bounds.top + bounds.height / 2);
+      const distance = Math.hypot(dx, dy);
+      const influence = Math.max(0, 1 - distance / 125);
+      letter.style.transform = `translate3d(${(dx * influence * .07).toFixed(1)}px, ${(dy * influence * .07).toFixed(1)}px, 0) rotate(${(dx * influence * .025).toFixed(2)}deg)`;
+    });
+  });
+  heroName.addEventListener("pointerleave", () => letters.forEach((letter) => { letter.style.transform = ""; }));
 }
 
 const dialog = document.querySelector("#project-dialog");
@@ -587,77 +680,136 @@ menuToggle.addEventListener("click", () => {
   menuToggle.textContent = open ? "×" : "☰";
 });
 
-// User-initiated playback of the supplied music file. The live analyser adds gentle beat response.
+// Playback state comes directly from the audio element; no analyser sits in the sound path.
 const soundToggle = document.querySelector(".sound-toggle");
-let soundOn = false;
-const soundtrack = new Audio("./assets/inner-lights.mp4");
-soundtrack.loop = true;
-soundtrack.volume = 0.58;
-soundtrack.preload = "auto";
-let musicContext, musicAnalyser, musicSource, musicData, musicFrame;
-function setMusicState(on, message = "") {
-  soundOn = on;
-  soundToggle.setAttribute("aria-pressed", String(on));
-  soundToggle.setAttribute(
-    "aria-label",
-    on ? "Turn music off" : "Turn music on",
-  );
-  soundToggle.querySelector("span:last-child").textContent =
-    message || (on ? "Music on" : "Music off");
-  document.body.classList.toggle("music-on", on);
-  if (!on) {
-    cancelAnimationFrame(musicFrame);
-    document.documentElement.style.setProperty("--music-energy", "0");
+const musicPlayer = document.querySelector(".music-player");
+const playlist = [
+  { title: "INNER LIGHTS", src: "./assets/inner-lights.mp4" },
+  { title: "BAD BUNNY - SI VEO A TU MAMÁ", src: "./assets/bad-bunny-si-veo-a-tu-mama.mp3" },
+];
+const soundtrack = new Audio();
+soundtrack.preload = "metadata";
+soundtrack.volume = 0.68;
+let trackIndex = 0;
+let failedTracks = new Set();
+let seekDragging = false;
+const musicTitle = musicPlayer.querySelector(".music-track-title");
+const musicCount = musicPlayer.querySelector(".music-track-count");
+const musicSeek = musicPlayer.querySelector(".music-seek");
+const musicCurrent = musicPlayer.querySelector(".music-time-current");
+const musicTotal = musicPlayer.querySelector(".music-time-total");
+const musicPlay = musicPlayer.querySelector(".music-play");
+const musicStatus = musicPlayer.querySelector(".music-status");
+function formatMusicTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+}
+function syncMusicState() {
+  const playing = !soundtrack.paused && !soundtrack.ended && !soundtrack.error;
+  soundToggle.setAttribute("aria-pressed", String(playing));
+  soundToggle.setAttribute("aria-label", playing ? "Pause background music" : "Play background music");
+  soundToggle.querySelector("span:last-child").textContent = playing ? "Music on" : "Music off";
+  musicPlay.textContent = playing ? "Ⅱ" : "▶";
+  musicPlay.setAttribute("aria-label", playing ? "Pause" : "Play");
+  document.body.classList.toggle("music-on", playing);
+}
+function updateTrackLabel() {
+  musicTitle.textContent = playlist[trackIndex].title;
+  musicTitle.animate?.([{ transform: "translate3d(0,5px,0)", opacity: 0.35 }, { transform: "translate3d(0,0,0)", opacity: 1 }], { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)" });
+  musicCount.textContent = `${String(trackIndex + 1).padStart(2, "0")} / ${String(playlist.length).padStart(2, "0")}`;
+  musicSeek.value = "0";
+  musicCurrent.textContent = "0:00";
+  musicTotal.textContent = "0:00";
+}
+function showMusicPlayer() {
+  musicPlayer.classList.add("is-open");
+  musicPlayer.setAttribute("aria-hidden", "false");
+  const collapsed = matchMedia("(max-width: 600px)").matches;
+  musicPlayer.classList.toggle("is-collapsed", collapsed);
+  musicPlayer.querySelector(".music-collapse").setAttribute("aria-label", collapsed ? "Expand music player" : "Collapse music player");
+}
+async function playTrack(index, attemptFallback = true) {
+  trackIndex = (index + playlist.length) % playlist.length;
+  failedTracks = new Set();
+  soundtrack.pause();
+  soundtrack.src = playlist[trackIndex].src;
+  soundtrack.load();
+  updateTrackLabel();
+  musicStatus.textContent = "";
+  showMusicPlayer();
+  try {
+    await soundtrack.play();
+    syncMusicState();
+    return true;
+  } catch (error) {
+    syncMusicState();
+    if (attemptFallback && playlist.length > 1) return tryNextAvailable(trackIndex);
+    musicStatus.textContent = error?.name === "NotAllowedError" ? "Playback needs a click to start." : "UNAVAILABLE";
+    return false;
   }
 }
-soundtrack.addEventListener("play", () => setMusicState(true));
-soundtrack.addEventListener("pause", () => setMusicState(false));
-soundtrack.addEventListener("ended", () => setMusicState(false));
-soundtrack.addEventListener("error", () =>
-  setMusicState(false, "Audio unavailable"),
-);
-function animateToMusic() {
-  if (!soundOn || !musicAnalyser) return;
-  musicAnalyser.getByteFrequencyData(musicData);
-  let sum = 0;
-  for (let i = 1; i < 20; i++) sum += musicData[i];
-  const energy = Math.min(1, sum / 3600);
-  document.documentElement.style.setProperty(
-    "--music-energy",
-    energy.toFixed(3),
-  );
-  musicFrame = requestAnimationFrame(animateToMusic);
-}
-function connectMusicMeter() {
-  if (musicAnalyser) return;
-  musicContext = new (window.AudioContext || window.webkitAudioContext)();
-  musicAnalyser = musicContext.createAnalyser();
-  musicAnalyser.fftSize = 256;
-  musicData = new Uint8Array(musicAnalyser.frequencyBinCount);
-  musicSource = musicContext.createMediaElementSource(soundtrack);
-  musicSource.connect(musicAnalyser);
-  musicAnalyser.connect(musicContext.destination);
-}
-soundToggle.addEventListener("click", async () => {
-  if (!soundOn) {
-    try {
-      try {
-        connectMusicMeter();
-        await musicContext.resume();
-      } catch {}
-      await soundtrack.play();
-      setMusicState(true);
-      animateToMusic();
-    } catch {
-      setMusicState(false, "Audio unavailable");
-    }
-  } else {
+async function tryNextAvailable(failedIndex) {
+  failedTracks.add(failedIndex);
+  if (failedTracks.size >= playlist.length) {
+    musicStatus.textContent = "UNAVAILABLE";
     soundtrack.pause();
-    cancelAnimationFrame(musicFrame);
-    document.documentElement.style.setProperty("--music-energy", "0");
-    setMusicState(false);
+    syncMusicState();
+    return false;
+  }
+  const next = (failedIndex + 1) % playlist.length;
+  trackIndex = next;
+  soundtrack.src = playlist[next].src;
+  soundtrack.load();
+  updateTrackLabel();
+  try {
+    await soundtrack.play();
+    syncMusicState();
+    return true;
+  } catch {
+    return tryNextAvailable(next);
+  }
+}
+soundtrack.addEventListener("play", syncMusicState);
+soundtrack.addEventListener("pause", syncMusicState);
+soundtrack.addEventListener("ended", () => playTrack(trackIndex + 1));
+soundtrack.addEventListener("error", () => {
+  if (!musicPlayer.classList.contains("is-open") || soundtrack.paused || failedTracks.has(trackIndex)) return;
+  soundtrack.pause();
+  tryNextAvailable(trackIndex);
+});
+soundtrack.addEventListener("loadedmetadata", () => {
+  musicTotal.textContent = formatMusicTime(soundtrack.duration);
+});
+soundtrack.addEventListener("timeupdate", () => {
+  if (!seekDragging) musicSeek.value = String(soundtrack.duration ? Math.round(soundtrack.currentTime / soundtrack.duration * 1000) : 0);
+  musicCurrent.textContent = formatMusicTime(soundtrack.currentTime);
+});
+soundToggle.addEventListener("click", () => {
+  if (soundtrack.paused || soundtrack.ended) playTrack(trackIndex);
+  else soundtrack.pause();
+});
+musicPlay.addEventListener("click", () => {
+  if (soundtrack.paused || soundtrack.ended) playTrack(trackIndex);
+  else soundtrack.pause();
+});
+musicPlayer.querySelector(".music-next").addEventListener("click", () => playTrack(trackIndex + 1));
+musicPlayer.querySelector(".music-previous").addEventListener("click", () => playTrack(trackIndex - 1));
+musicPlayer.querySelector(".music-collapse").addEventListener("click", () => {
+  musicPlayer.classList.toggle("is-collapsed");
+  const collapsed = musicPlayer.classList.contains("is-collapsed");
+  musicPlayer.querySelector(".music-collapse").setAttribute("aria-label", collapsed ? "Expand music player" : "Collapse music player");
+  musicPlayer.querySelector(".music-collapse").textContent = collapsed ? "+" : "−";
+});
+musicSeek.addEventListener("input", () => {
+  seekDragging = true;
+  if (Number.isFinite(soundtrack.duration)) {
+    soundtrack.currentTime = soundtrack.duration * Number(musicSeek.value) / 1000;
+    musicCurrent.textContent = formatMusicTime(soundtrack.currentTime);
   }
 });
+musicSeek.addEventListener("change", () => { seekDragging = false; });
+musicPlayer.querySelector(".music-volume").addEventListener("input", (event) => { soundtrack.volume = Number(event.currentTarget.value); });
+updateTrackLabel();
 
 // Press-and-hold / drag interactions make project artwork respond to touch too.
 let pressTimer;
@@ -697,29 +849,89 @@ document.querySelector(".skill-bag")?.addEventListener("drop", (event) => {
 });
 const emblem = document.querySelector(".contact-emblem");
 if (emblem) {
-  let dragging = false,
-    startX = 0,
-    startY = 0,
-    originX = 0,
-    originY = 0;
+  const coreWrap = emblem.closest(".contact-core-wrap");
+  const readout = coreWrap?.querySelector(".contact-core-readout");
+  const destinations = [...(coreWrap?.querySelectorAll("[data-core-target]") || [])];
+  const reducedCoreMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let dragging = false, startX = 0, startY = 0, dragX = 0, dragY = 0, pointerX = 0, pointerY = 0, pointerId = null, dragFrame = 0, springFrame = 0, targets = [];
+  const setCorePosition = (x, y, rotate = 0, scale = 1) => {
+    emblem.style.setProperty("--core-x", `${x.toFixed(1)}px`);
+    emblem.style.setProperty("--core-y", `${y.toFixed(1)}px`);
+    emblem.style.setProperty("--core-rotate", `${rotate.toFixed(2)}deg`);
+    emblem.style.setProperty("--core-scale", scale.toFixed(3));
+  };
+  const moveCore = () => {
+    dragFrame = 0;
+    if (!dragging) return;
+    dragX = pointerX - startX;
+    dragY = pointerY - startY;
+    setCorePosition(dragX, dragY, reducedCoreMotion ? 0 : Math.max(-7, Math.min(7, dragX * .035)), reducedCoreMotion ? 1 : 1.035);
+    let near = null, best = Infinity;
+    targets.forEach(({ element, rect }) => {
+      const distance = Math.hypot(pointerX - (rect.left + rect.width / 2), pointerY - (rect.top + rect.height / 2));
+      element.classList.toggle("is-near", distance < Math.max(45, Math.max(rect.width, rect.height) * .65));
+      if (distance < best) { best = distance; near = element; }
+    });
+    const candidate = best < 76 ? near : null;
+    if (readout) readout.textContent = candidate ? `DROP TO OPEN ${candidate.textContent.trim()}` : "DRAG DF INTO A DESTINATION";
+  };
+  const settleCore = () => {
+    springFrame = 0;
+    const x = Number.parseFloat(emblem.style.getPropertyValue("--core-x")) || 0;
+    const y = Number.parseFloat(emblem.style.getPropertyValue("--core-y")) || 0;
+    if (Math.abs(x) < .5 && Math.abs(y) < .5) { setCorePosition(0, 0); return; }
+    setCorePosition(x * .72, y * .72, x * .72 * .035, 1 + Math.min(.025, Math.hypot(x,y) / 1800));
+    springFrame = requestAnimationFrame(settleCore);
+  };
   emblem.addEventListener("pointerdown", (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    cancelAnimationFrame(springFrame);
     dragging = true;
+    pointerId = event.pointerId;
+    pointerX = startX = event.clientX;
+    pointerY = startY = event.clientY;
+    dragX = dragY = 0;
+    targets = destinations.map((element) => ({ element, rect: element.getBoundingClientRect() }));
     emblem.setPointerCapture(event.pointerId);
-    startX = event.clientX;
-    startY = event.clientY;
-    originX = Number(emblem.dataset.x || 0);
-    originY = Number(emblem.dataset.y || 0);
+    emblem.classList.add("is-dragging");
+    if (readout) readout.textContent = "DRAG DF INTO A DESTINATION";
+    event.preventDefault();
   });
   emblem.addEventListener("pointermove", (event) => {
     if (!dragging) return;
-    const x = originX + event.clientX - startX,
-      y = originY + event.clientY - startY;
-    emblem.dataset.x = x;
-    emblem.dataset.y = y;
-    emblem.style.translate = `${x}px ${y}px`;
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    if (!dragFrame) dragFrame = requestAnimationFrame(moveCore);
   });
-  emblem.addEventListener("pointerup", () => {
+  const releaseCore = (event) => {
+    if (!dragging || (event?.pointerId != null && event.pointerId !== pointerId)) return;
+    const drop = targets.reduce((best, item) => {
+      const distance = Math.hypot(pointerX - (item.rect.left + item.rect.width / 2), pointerY - (item.rect.top + item.rect.height / 2));
+      return distance < best.distance ? { element: item.element, distance } : best;
+    }, { element: null, distance: Infinity });
+    const destinationChip = drop.distance < 76 ? drop.element : null;
     dragging = false;
+    pointerId = null;
+    emblem.classList.remove("is-dragging");
+    destinations.forEach((element) => element.classList.remove("is-near"));
+    if (destinationChip) {
+      if (readout) readout.textContent = `OPENING ${destinationChip.textContent.trim()}`;
+      const destination = document.querySelector(destinationChip.getAttribute("href"));
+      destination?.scrollIntoView({ behavior: reducedCoreMotion ? "auto" : "smooth", block: "start" });
+      if (destination?.id) history.replaceState(null, "", `#${destination.id}`);
+    } else if (readout) readout.textContent = "DRAG DF INTO A DESTINATION";
+    if (dragFrame) { cancelAnimationFrame(dragFrame); dragFrame = 0; }
+    if (reducedCoreMotion) setCorePosition(0, 0);
+    else springFrame = requestAnimationFrame(settleCore);
+  };
+  emblem.addEventListener("pointerup", releaseCore);
+  emblem.addEventListener("pointercancel", releaseCore);
+  emblem.addEventListener("lostpointercapture", releaseCore);
+  emblem.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    destinations[0]?.focus();
+    if (readout) readout.textContent = "CHOOSE ABOUT, PROJECTS OR CONTACT";
   });
 }
 
@@ -740,23 +952,28 @@ const railProgress = document.querySelector(".rail-progress");
 const projectScenes = [...document.querySelectorAll(".project-scene")];
 const projectCounter = document.querySelector(".project-counter");
 const sceneButtons = [...document.querySelectorAll("[data-project-step]")];
-let railFrame = 0;
+let railStart = 0;
+let railTravel = 1;
+let previousRailActive = -1;
+function measureRail() {
+  if (!traverse) return;
+  railStart = window.scrollY + traverse.getBoundingClientRect().top;
+  railTravel = Math.max(1, traverse.offsetHeight - window.innerHeight);
+}
+window.addEventListener("resize", measureRail, { passive: true });
 function updateRail() {
-  railFrame = 0;
   if (!traverse || !projectScenes.length) return;
-  const bounds = traverse.getBoundingClientRect();
-  const travel = Math.max(1, traverse.offsetHeight - innerHeight);
-  const progress = Math.min(1, Math.max(0, -bounds.top / travel));
+  const progress = Math.min(1, Math.max(0, (window.scrollY - railStart) / railTravel));
   const position = progress * (projectScenes.length - 1);
   const active = Math.min(projectScenes.length - 1, Math.round(position));
   projectScenes.forEach((item, index) => {
     const enter =
       index === 0 ? 1 : Math.min(1, Math.max(0, position - index + 1));
     const leave = Math.min(1, Math.max(0, position - index));
-    const clipped = Math.max(1 - enter, leave);
+    const opacity = index === 0 ? Math.max(0, 1 - leave) : Math.max(0, enter * (1 - leave));
     const x = (1 - enter) * 12 - leave * 9;
     const scale = 0.96 + enter * 0.04 - leave * 0.025;
-    item.style.setProperty("--scene-clip", `${clipped * 100}%`);
+    item.style.setProperty("--scene-opacity", opacity.toFixed(3));
     item.style.setProperty("--scene-x", `${x}vw`);
     item.style.setProperty("--scene-scale", scale.toFixed(3));
     item.style.setProperty(
@@ -767,31 +984,21 @@ function updateRail() {
       "--scene-copy-y",
       `${(1 - enter) * 20 - leave * 16}px`,
     );
-    item.classList.toggle("is-active", index === active);
-    item.setAttribute("aria-hidden", String(index !== active));
-    item.inert = index !== active;
+    if (active !== previousRailActive) {
+      item.classList.toggle("is-active", index === active);
+      item.setAttribute("aria-hidden", String(index !== active));
+      item.inert = index !== active;
+    }
   });
-  projectCounter.innerHTML = `${String(active + 1).padStart(2, "0")} <i>—</i> ${String(projectScenes.length).padStart(2, "0")}`;
   railProgress?.style.setProperty("--rail-progress", progress.toFixed(3));
-  railProgress?.setAttribute("aria-valuenow", String(active + 1));
-  sceneButtons.forEach((button, index) =>
-    button.setAttribute("aria-current", index === active ? "step" : "false"),
-  );
+  if (active !== previousRailActive) {
+    previousRailActive = active;
+    projectCounter.innerHTML = `${String(active + 1).padStart(2, "0")} <i>—</i> ${String(projectScenes.length).padStart(2, "0")}`;
+    railProgress?.setAttribute("aria-valuenow", String(active + 1));
+    sceneButtons.forEach((button, index) => button.setAttribute("aria-current", index === active ? "step" : "false"));
+  }
 }
-window.addEventListener(
-  "scroll",
-  () => {
-    if (!railFrame) railFrame = requestAnimationFrame(updateRail);
-  },
-  { passive: true },
-);
-window.addEventListener(
-  "resize",
-  () => {
-    if (!railFrame) railFrame = requestAnimationFrame(updateRail);
-  },
-  { passive: true },
-);
+window.addPortfolioScrollTask(updateRail);
 sceneButtons.forEach((button) =>
   button.addEventListener("click", () => {
     if (!traverse) return;
@@ -805,6 +1012,7 @@ sceneButtons.forEach((button) =>
     });
   }),
 );
+measureRail();
 updateRail();
 
 // The Projects route is one scroll-driven archive: every chapter shares the same viewport mask.
@@ -812,15 +1020,53 @@ const archiveJourney = document.querySelector(".archive-journey");
 const archiveScenes = [...document.querySelectorAll("[data-archive-scene]")];
 const archiveProgress = document.querySelector(".archive-progress");
 const archiveIndexItems = [...document.querySelectorAll("[data-archive-go]")];
-const archiveNames = ["PORCHLIGHT", "TICKET", "DIGITALBANK", "FRONT-END", "PYTHON / DATA"];
-let archiveFrame = 0;
+const archiveNames = ["PORCHLIGHT SUPPORT FINDER", "CONFERENCE TICKET GENERATOR", "DIGITALBANK", "FRONT-END MENTOR PROJECTS", "PYTHON / DATA PROJECTS"];
+const archiveCommandTarget = document.querySelector(".archive-command-target");
+const archiveTerminal = document.querySelector(".archive-terminal");
+const archiveCursorPreview = document.querySelector(".archive-cursor-preview");
+const archiveCursorImage = archiveCursorPreview?.querySelector("img");
+const archiveCursorLabel = archiveCursorPreview?.querySelector("span");
+let archivePreviewFrame = 0;
+let archivePreviewPoint = { x: 0, y: 0 };
+let reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let archiveStart = 0;
+let archiveTravel = 1;
+let archiveHeight = 0;
+const archiveMotionPreference = matchMedia("(prefers-reduced-motion: reduce)");
+let previousArchiveActive = -1;
+let previousArchiveIncoming = -1;
+let previousArchiveOutgoing = -1;
+let reducedArchiveReady = false;
+function measureArchive() {
+  if (!archiveJourney) return;
+  archiveStart = window.scrollY + archiveJourney.getBoundingClientRect().top;
+  archiveHeight = archiveJourney.offsetHeight;
+  archiveTravel = Math.max(1, archiveHeight - window.innerHeight);
+}
+function loadArchiveSceneImages(index) {
+  archiveScenes[index]?.querySelectorAll("img[data-src]").forEach((image) => {
+    image.src = image.dataset.src;
+    image.removeAttribute("data-src");
+  });
+}
+window.addEventListener("resize", measureArchive, { passive: true });
 function updateArchive() {
-  archiveFrame = 0;
   if (!archiveJourney || !archiveScenes.length) return;
-  const bounds = archiveJourney.getBoundingClientRect();
-  const travel = Math.max(1, archiveJourney.offsetHeight - innerHeight);
-  archiveJourney.closest(".archive-page")?.classList.toggle("archive-nav-on", bounds.top < innerHeight * 0.82 && bounds.bottom > innerHeight * 0.18);
-  const progress = Math.min(1, Math.max(0, -bounds.top / travel));
+  if (reducedMotion) {
+    if (reducedArchiveReady) return;
+    archiveScenes.forEach((item) => {
+      item.classList.remove("is-active");
+      item.setAttribute("aria-hidden", "false");
+      item.inert = false;
+    });
+    archiveScenes.forEach((_, index) => loadArchiveSceneImages(index));
+    reducedArchiveReady = true;
+    return;
+  }
+  reducedArchiveReady = false;
+  const top = archiveStart - window.scrollY;
+  const progress = Math.min(1, Math.max(0, (window.scrollY - archiveStart) / archiveTravel));
+  archiveJourney.closest(".archive-page")?.classList.toggle("archive-nav-on", top < innerHeight * 0.82 && top + archiveHeight > innerHeight * 0.18);
   const position = progress * (archiveScenes.length - 1);
   const active = Math.min(archiveScenes.length - 1, Math.round(position));
   const outgoing = Math.min(archiveScenes.length - 1, Math.floor(position));
@@ -828,39 +1074,47 @@ function updateArchive() {
   archiveScenes.forEach((item, index) => {
     const enter = index === 0 ? 1 : Math.min(1, Math.max(0, position - index + 1));
     const leave = Math.min(1, Math.max(0, position - index));
-    const left = (1 - enter) * 100;
-    const right = leave * 100;
-    item.style.setProperty("--archive-left", `${left}%`);
-    item.style.setProperty("--archive-right", `${right}%`);
+    const opacity = index === 0 ? Math.max(0, 1 - leave) : Math.max(0, enter * (1 - leave));
+    item.style.setProperty("--archive-opacity", opacity.toFixed(3));
     item.style.setProperty("--archive-enter", enter.toFixed(3));
-    item.style.setProperty("--archive-window-scale", (0.89 + enter * 0.11).toFixed(3));
-    item.style.setProperty("--archive-story-bottom", `${(1 - enter) * 100}%`);
-    item.style.setProperty("--archive-story-y", `${(1 - enter) * 24}px`);
     item.style.setProperty("--archive-x", `${(1 - enter) * 6 - leave * 4}vw`);
     item.style.setProperty("--archive-scale", (0.965 + enter * 0.035 - leave * 0.025).toFixed(3));
-    item.style.zIndex = String(index === incoming ? 3 : index === outgoing ? 2 : 1);
-    item.classList.toggle("is-active", index === active);
-    item.setAttribute("aria-hidden", String(index !== active));
-    item.inert = index !== active;
+    item.style.setProperty("--archive-rotate", `${((1 - enter) * 0.65 - leave * 1.1).toFixed(2)}deg`);
+    if (incoming !== previousArchiveIncoming || outgoing !== previousArchiveOutgoing) item.style.zIndex = String(index === incoming ? 3 : index === outgoing ? 2 : 1);
+    if (active !== previousArchiveActive) {
+      item.classList.toggle("is-active", index === active);
+      item.setAttribute("aria-hidden", String(index !== active));
+      item.inert = index !== active;
+    }
   });
-  const number = String(active + 1).padStart(2, "0");
-  archiveProgress?.querySelector("b")?.replaceChildren(number);
-  const currentLabel = document.querySelector(".archive-current-label strong");
-  if (currentLabel) currentLabel.textContent = `${number} / ${archiveNames[active]}`;
-  archiveIndexItems.forEach((button, index) => {
-    if (index === active) button.setAttribute("aria-current", "step");
-    else button.removeAttribute("aria-current");
-  });
+  if (active !== previousArchiveActive) {
+    previousArchiveActive = active;
+    const number = String(active + 1).padStart(2, "0");
+    archiveProgress?.querySelector("b")?.replaceChildren(number);
+    const currentLabel = document.querySelector(".archive-current-label strong");
+    if (currentLabel) currentLabel.textContent = `${number} / ${archiveNames[active]}`;
+    if (archiveCommandTarget) archiveCommandTarget.textContent = `open ${archiveFoldersForCommand(active)}`;
+    loadArchiveSceneImages(active);
+    loadArchiveSceneImages(Math.min(active + 1, archiveScenes.length - 1));
+    archiveIndexItems.forEach((button, index) => {
+      button.setAttribute("aria-current", index === active ? "step" : "false");
+      button.classList.toggle("is-selected", index === active);
+    });
+  }
+  previousArchiveIncoming = incoming;
+  previousArchiveOutgoing = outgoing;
 }
-window.addEventListener("scroll", () => {
-  if (archiveJourney && !archiveFrame) archiveFrame = requestAnimationFrame(updateArchive);
-}, { passive: true });
-window.addEventListener("resize", () => {
-  if (archiveJourney && !archiveFrame) archiveFrame = requestAnimationFrame(updateArchive);
-}, { passive: true });
+function archiveFoldersForCommand(index) {
+  return archiveIndexItems[index]?.dataset.command || archiveNames[index]?.toLowerCase().replaceAll(" ", "-") || "projects";
+}
+window.addPortfolioScrollTask(updateArchive);
 archiveIndexItems.forEach((button) => button.addEventListener("click", () => {
   if (!archiveJourney) return;
   const index = Number(button.dataset.archiveGo);
+  if (reducedMotion) {
+    archiveScenes[index]?.scrollIntoView({ behavior: "auto", block: "start" });
+    return;
+  }
   const bounds = archiveJourney.getBoundingClientRect();
   const travel = Math.max(0, archiveJourney.offsetHeight - innerHeight);
   window.scrollTo({
@@ -868,7 +1122,49 @@ archiveIndexItems.forEach((button) => button.addEventListener("click", () => {
     behavior: "smooth",
   });
 }));
+archiveMotionPreference.addEventListener?.("change", (event) => {
+  reducedMotion = event.matches;
+  reducedArchiveReady = false;
+  measureArchive();
+  updateArchive();
+});
+if (archiveTerminal && archiveCursorPreview && archiveCursorImage) {
+  const scheduleArchivePreviewPosition = () => {
+    archivePreviewFrame = 0;
+    const x = Math.min(archivePreviewPoint.x + 17, window.innerWidth - 240);
+    const y = Math.max(12, Math.min(archivePreviewPoint.y - 52, window.innerHeight - 150));
+    archiveCursorPreview.style.setProperty("--preview-x", `${x}px`);
+    archiveCursorPreview.style.setProperty("--preview-y", `${y}px`);
+  };
+  archiveTerminal.addEventListener("pointerover", (event) => {
+    const button = event.target.closest("[data-archive-go]");
+    if (!button || !button.dataset.previewSource || !archiveTerminal.contains(button)) return;
+    if (archiveCursorImage.getAttribute("src") !== button.dataset.previewSource) {
+      archiveCursorImage.src = button.dataset.previewSource;
+      archiveCursorImage.animate?.([{ opacity: 0.3, transform: "scale(.96)" }, { opacity: 1, transform: "scale(1)" }], { duration: 230, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
+    archiveCursorLabel.textContent = `PROJECT ${button.querySelector("i").textContent} / ${archiveNames[Number(button.dataset.archiveGo)]}`;
+    archiveCursorPreview.classList.add("is-visible");
+    archivePreviewPoint = { x: event.clientX, y: event.clientY };
+    if (!archivePreviewFrame) archivePreviewFrame = requestAnimationFrame(scheduleArchivePreviewPosition);
+  });
+  archiveTerminal.addEventListener("pointermove", (event) => {
+    if (!archiveCursorPreview.classList.contains("is-visible")) return;
+    archivePreviewPoint = { x: event.clientX, y: event.clientY };
+    if (!archivePreviewFrame) archivePreviewFrame = requestAnimationFrame(scheduleArchivePreviewPosition);
+  }, { passive: true });
+  archiveTerminal.addEventListener("pointerout", (event) => {
+    if (event.target.closest("[data-archive-go]") && !event.relatedTarget?.closest("[data-archive-go]")) archiveCursorPreview.classList.remove("is-visible");
+  });
+  archiveTerminal.addEventListener("pointerleave", () => archiveCursorPreview.classList.remove("is-visible"));
+}
+measureArchive();
 updateArchive();
+window.addEventListener("load", () => {
+  measureRail();
+  measureArchive();
+  schedulePortfolioScroll();
+}, { once: true });
 
 // Native horizontal overflow stays in place for touch/trackpad; pointer drag adds a desktop option.
 const archiveStrip = document.querySelector(".archive-strip");
@@ -915,18 +1211,17 @@ document.querySelectorAll(".preview-photo").forEach((frame) =>
     frame.style.setProperty("--image-shift-y", `${y * 8}px`);
   }),
 );
-document.querySelectorAll(".button,.nav-cta").forEach((button) =>
+document.querySelectorAll(".button,.nav-cta,.sound-toggle,.theme-toggle,.music-player-controls button").forEach((button) => {
+  let bounds = null;
+  button.addEventListener("pointerenter", () => { bounds = button.getBoundingClientRect(); });
   button.addEventListener("pointermove", (event) => {
-    if (!matchMedia("(pointer:fine)").matches) return;
-    const rect = button.getBoundingClientRect();
-    button.style.translate = `${(event.clientX - rect.left - rect.width / 2) * 0.045}px ${(event.clientY - rect.top - rect.height / 2) * 0.08}px`;
-  }),
-);
-document.querySelectorAll(".button,.nav-cta").forEach((button) =>
-  button.addEventListener("pointerleave", () => {
-    button.style.translate = "";
-  }),
-);
+    if (!bounds || !matchMedia("(pointer:fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const x = Math.max(-4, Math.min(4, (event.clientX - bounds.left - bounds.width / 2) * .045));
+    const y = Math.max(-4, Math.min(4, (event.clientY - bounds.top - bounds.height / 2) * .08));
+    button.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
+  });
+  button.addEventListener("pointerleave", () => { button.style.translate = ""; bounds = null; });
+});
 
 document
   .querySelector(".to-top")
