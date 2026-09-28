@@ -322,6 +322,7 @@ function startDriveIntro() {
     window.removeEventListener("error", onFailure);
     window.removeEventListener("unhandledrejection", onFailure, true);
     if (natural) root.classList.add("intro-completed");
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) root.classList.add("intro-hero-ready");
     root.classList.remove("intro-in-progress", "intro-scroll-lock");
     root.style.overflow = previousOverflow;
     delete root.dataset.showIntro;
@@ -712,6 +713,34 @@ if (singlePage) {
 
 if (page === "home") {
   const hero = document.querySelector(".home-hero");
+  hero.classList.add("cinematic-identity");
+  const heroTitle = hero.querySelector(".hero-title");
+  const [firstNameLine, secondNameLine] = heroTitle.querySelectorAll(".name-line");
+  const secondName = secondNameLine?.querySelector("span");
+  if (firstNameLine && secondName) {
+    secondName.textContent = secondName.textContent.replace(/\.$/, "");
+    firstNameLine.append(document.createTextNode(" "), secondName);
+    secondNameLine.remove();
+  }
+  hero.insertBefore(heroTitle, hero.firstChild);
+  const portrait = document.createElement("div");
+  portrait.className = "hero-portrait-scene";
+  portrait.setAttribute("role", "presentation");
+  portrait.setAttribute("aria-hidden", "true");
+  portrait.innerHTML = '<span class="hero-portrait-glow"></span><img class="hero-portrait" src="./assets/mypotrait.png" alt="" width="1292" height="1217" fetchpriority="high" decoding="async">';
+  heroTitle.after(portrait);
+  hero.insertAdjacentHTML("beforeend", '<p class="hero-identity-capsule"><strong>DANIEL FASAN</strong><span>DIGITAL SOFTWARE DEVELOPMENT</span></p><p class="hero-technical-label"><span>BASED IN THE UK</span><span>DIGITAL PORTFOLIO / 2026</span></p>');
+  const introLine = hero.querySelector(".hero-copy .eyebrow");
+  if (introLine) introLine.hidden = true;
+  const helloLink = hero.querySelector(".hero-actions .button-outline");
+  if (helloLink) {
+    helloLink.href = `mailto:${LINKS.email}`;
+    helloLink.dataset.cursor = "email";
+    helloLink.innerHTML = 'Say hello <span aria-hidden="true">↗</span>';
+  }
+  portrait.querySelector(".hero-portrait").addEventListener("animationend", (event) => {
+    if (event.animationName === "hero-portrait-rise") document.documentElement.classList.remove("intro-hero-ready");
+  });
   hero.insertAdjacentHTML("beforeend", '<div class="hero-spotlight" aria-hidden="true"></div>');
   const yearWidget = document.createElement("section");
   yearWidget.className = "year-progress shell reveal";
@@ -941,6 +970,7 @@ if (hero && matchMedia("(pointer:fine)").matches) {
   const orbit = hero.querySelector(".hero-orbit");
   const card = hero.querySelector(".orbit-card");
   const spotlight = hero.querySelector(".hero-spotlight");
+  const portrait = hero.querySelector(".hero-portrait");
   let heroBounds = hero.getBoundingClientRect();
   window.addEventListener("resize", () => { heroBounds = hero.getBoundingClientRect(); }, { passive: true });
   let pointerFrame = 0;
@@ -951,6 +981,8 @@ if (hero && matchMedia("(pointer:fine)").matches) {
     const y = (event.clientY - heroBounds.top) / heroBounds.height - 0.5;
     spotlight.style.setProperty("--spot-x", `${event.clientX - heroBounds.left}px`);
     spotlight.style.setProperty("--spot-y", `${event.clientY - heroBounds.top}px`);
+    portrait.style.setProperty("--portrait-x", `${x * 7}px`);
+    portrait.style.setProperty("--portrait-y", `${y * 5}px`);
     if (notebook?.classList.contains("is-open")) return;
     orbit.style.translate = `${x * -8}px ${y * -7}px`;
     orbit.style.rotate = `${x}deg`;
@@ -971,6 +1003,8 @@ if (hero && matchMedia("(pointer:fine)").matches) {
     });
   });
   hero.addEventListener("pointerleave", () => {
+    portrait.style.removeProperty("--portrait-x");
+    portrait.style.removeProperty("--portrait-y");
     card.style.removeProperty("--note-x");
     card.style.removeProperty("--note-y");
     card.style.removeProperty("--note-tilt");
