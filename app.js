@@ -1,3 +1,23 @@
+const INTRO_ENABLED = true;
+const INTRO_TIMING = Object.freeze({
+  total: 6000,
+  captionDelay: 100,
+  captionDuration: 420,
+  roadDuration: 800,
+  carDelay: 800,
+  carDuration: 2200,
+  letterDelay: 1200,
+  letterDuration: 520,
+  letterStagger: 80,
+  subtitleDelay: 3600,
+  subtitleDuration: 520,
+  counterDuration: 4600,
+  skipDelay: 300,
+  skipFade: 400,
+  exitDelay: 4800,
+  shutterDuration: 800,
+  heroDelay: 5200,
+});
 const LINKS = {
   linkedin: "https://www.linkedin.com/in/daniel-fasan-a0b503331/",
   github: "https://github.com/daniel-FDO",
@@ -190,7 +210,7 @@ const education = [
 ];
 
 const nav = document.documentElement.dataset.singlePage === "true"
-  ? [["Home", "#home", "home"], ["About", "#about", "about"], ["Projects", "#projects", "projects"], ["Experience", "#experience", "experience"], ["Education", "#education", "education"], ["Contact", "#contact", "contact"]]
+  ? [["Home", "#home", "home"], ["About", "#about", "about"], ["Projects", "#projects", "projects"], ["Experience", "#experience", "experience"], ["Education", "#education", "education"], ["Skills", "#skills", "skills"], ["Contact", "#contact", "contact"]]
   : [["Home", "./index.html", "home"], ["Projects", "./projects.html", "projects"], ["About", "./about.html", "about"], ["Experience", "./experience.html", "experience"], ["Contact", "./contact.html", "contact"]];
 
 function preview(kind, full = false, numberOverride = "", deferImage = false) {
@@ -239,15 +259,122 @@ if ("ResizeObserver" in window) {
   portfolioResizeObserver.observe(document.body);
 }
 const identityOpening = document.querySelector(".identity-opening");
-if (identityOpening) {
-  if (document.documentElement.dataset.showIntro === "true") {
-    window.setTimeout(() => {
-      identityOpening.remove();
-      delete document.documentElement.dataset.showIntro;
-    }, 2800);
-  } else {
-    identityOpening.remove();
+function startDriveIntro() {
+  const root = document.documentElement;
+  const forced = new URLSearchParams(location.search).get("intro") === "1";
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const requested = root.dataset.showIntro === "true" || forced;
+  if (!identityOpening) return;
+  if (!INTRO_ENABLED || reducedMotion || !requested) {
+    identityOpening.style.visibility = "hidden";
+    identityOpening.style.pointerEvents = "none";
+    requestAnimationFrame(() => identityOpening.remove());
+    delete root.dataset.showIntro;
+    return;
   }
+
+  let completed = false;
+  let counterFrame = 0;
+  let exitTimer = 0;
+  let finishTimer = 0;
+  let removeTimer = 0;
+  const counter = identityOpening.querySelector(".intro-counter span");
+  const previousOverflow = root.style.overflow;
+  Object.entries(INTRO_TIMING).forEach(([name, value]) => {
+    root.style.setProperty(`--intro-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`, `${value}ms`);
+  });
+  root.classList.add("intro-in-progress", "intro-scroll-lock");
+  identityOpening.classList.add("is-active");
+  try { sessionStorage.setItem("df-identity-opening-seen", "1"); } catch {}
+
+  const mountCar = () => {
+    const source = document.querySelector(".road-car-art");
+    const mount = identityOpening.querySelector(".intro-car-bounce");
+    if (!source || !mount || mount.firstElementChild) return;
+    const carSvg = source.cloneNode(true);
+    const ids = new Map();
+    carSvg.querySelectorAll("[id]").forEach((element) => {
+      const oldId = element.id;
+      const newId = `intro-${oldId}`;
+      ids.set(oldId, newId);
+      element.id = newId;
+    });
+    carSvg.querySelectorAll("*").forEach((element) => {
+      for (const attribute of [...element.attributes]) {
+        let value = attribute.value;
+        ids.forEach((newId, oldId) => { value = value.replaceAll(`url(#${oldId})`, `url(#${newId})`); });
+        if (value !== attribute.value) element.setAttribute(attribute.name, value);
+      }
+    });
+    carSvg.setAttribute("focusable", "false");
+    mount.append(carSvg);
+  };
+  window.addEventListener("DOMContentLoaded", mountCar, { once: true });
+  if (document.readyState === "complete") mountCar();
+
+  const cleanUp = (natural = false) => {
+    if (completed) return;
+    completed = true;
+    cancelAnimationFrame(counterFrame);
+    clearTimeout(exitTimer);
+    clearTimeout(finishTimer);
+    clearTimeout(removeTimer);
+    document.removeEventListener("keydown", onKey, true);
+    document.removeEventListener("click", onClick, true);
+    window.removeEventListener("error", onFailure);
+    window.removeEventListener("unhandledrejection", onFailure, true);
+    if (natural) root.classList.add("intro-completed");
+    root.classList.remove("intro-in-progress", "intro-scroll-lock");
+    root.style.overflow = previousOverflow;
+    delete root.dataset.showIntro;
+    identityOpening.style.visibility = "hidden";
+    identityOpening.style.pointerEvents = "none";
+    requestAnimationFrame(() => identityOpening.remove());
+  };
+  const finish = (skip = false) => {
+    if (completed || identityOpening.classList.contains("is-shuttering") || identityOpening.classList.contains("is-skipping")) return;
+    if (skip) {
+      identityOpening.classList.add("is-skipping");
+      removeTimer = window.setTimeout(() => cleanUp(false), INTRO_TIMING.skipFade);
+      return;
+    }
+    identityOpening.classList.add("is-shuttering");
+    finishTimer = window.setTimeout(() => cleanUp(true), INTRO_TIMING.shutterDuration + 80);
+  };
+  function onKey(event) {
+    if (event.key === "Escape" || event.key === " " || event.code === "Space") {
+      event.preventDefault();
+      finish(true);
+    }
+  }
+  function onClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    finish(true);
+  }
+  function onFailure() { cleanUp(false); }
+  document.addEventListener("keydown", onKey, true);
+  document.addEventListener("click", onClick, true);
+  window.addEventListener("error", onFailure);
+  window.addEventListener("unhandledrejection", onFailure, true);
+
+  const start = performance.now();
+  const tickCounter = (now) => {
+    if (completed) return;
+    const progress = Math.min(1, Math.max(0, (now - start) / INTRO_TIMING.counterDuration));
+    const eased = 1 - (1 - progress) ** 3;
+    counter.textContent = String(Math.round(eased * 100)).padStart(3, "0");
+    if (progress < 1) counterFrame = requestAnimationFrame(tickCounter);
+  };
+  counterFrame = requestAnimationFrame(tickCounter);
+  exitTimer = window.setTimeout(() => finish(false), INTRO_TIMING.exitDelay);
+}
+try {
+  startDriveIntro();
+} catch {
+  document.documentElement.classList.remove("intro-in-progress", "intro-scroll-lock");
+  identityOpening?.remove();
+  delete document.documentElement.dataset.showIntro;
 }
 const header = document.querySelector("#site-header");
 header.innerHTML = `<div class="topbar"><a class="brand" href="./index.html" aria-label="Home"><span class="brand-dot">D</span><span>DANIEL FASAN</span></a><nav class="nav-links" aria-label="Main navigation">${nav.map(([name, url, id]) => `<a class="nav-link" href="${url}" ${page === id ? 'aria-current="page"' : ""}>${name}</a>`).join("")}</nav><div class="theme-control"><button class="theme-toggle" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Choose visual mode"><span class="theme-glyph" aria-hidden="true"></span><span class="theme-current">DAY</span></button><div class="theme-menu" hidden><div class="theme-menu-label">VISUAL MODE</div><button type="button" data-theme-choice="day">DAY</button><button type="button" data-theme-choice="studio">STUDIO</button><button type="button" data-theme-choice="night">NIGHT</button></div></div><div class="nav-end"><button class="sound-toggle" type="button" aria-pressed="false" aria-label="Play background music"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span>Music off</span></button><a class="nav-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello ↗</a><button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div>`;
@@ -409,6 +536,42 @@ function newVerse() {
   versePanel.querySelector(".verse-text").textContent = scripture[index][1];
   versePanel.querySelector(".verse-status").textContent = "King James Version · public domain";
 }
+
+function projectShowcaseMarkup(singlePage = false) {
+  const byId = (id) => projects.find((project) => project.id === id);
+  const cards = [
+    { project: byId("porchlight"), label: "Porchlight", title: "PORCHLIGHT SUPPORT FINDER", tagline: "Local help, made easier to find." },
+    { project: byId("rps"), label: "Rock, Paper, Scissors", title: "ROCK, PAPER, SCISSORS", tagline: "A quick round. Clear rules. One more go." },
+    { project: byId("blueprint"), label: "BluePrint", title: "BLUEPRINT", tagline: "A clearer first step toward your next role." },
+    { project: byId("ticket"), label: "Conference Tickets", title: "CONFERENCE TICKET GENERATOR", tagline: "Your conference details, ready to go." },
+    { project: byId("bank"), label: "Digitalbank", title: "DIGITALBANK", tagline: "Digital banking, explained at a glance." },
+  ];
+  const supportingUI = (project) => project.id === "blueprint"
+    ? `<div class="archive-float-ui archive-blueprint-builder"><span class="archive-float-label">LIVE CV BUILDER</span><iframe src="https://blueprint-vwig.onrender.com/pages/cvStart.html" title="BluePrint's real CV builder page" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+    : project.id === "rps"
+      ? `<div class="archive-float-ui archive-rps-rules"><span class="archive-float-label">THE REAL GAME RULES</span><img src="https://rock-paper-scissors-daniel.netlify.app/images/image-rules.svg" alt="Rock, paper, scissors rules from the live game" loading="lazy" decoding="async" width="304" height="270"></div>`
+      : "";
+  const stages = cards.map((item, index) => {
+    const number = String(index + 1).padStart(2, "0");
+    return `<article class="archive-case-study project-environment project-${item.project.id}" id="archive-project-${number}" data-project-section aria-labelledby="archive-project-title-${number}">
+      <div class="archive-case-shell">
+        <div class="archive-story"><div class="archive-story-kicker"><span>${number} / 05</span><i></i><span>${item.project.category}</span></div><h2 id="archive-project-title-${number}">${item.title}</h2><p class="archive-tagline">${item.tagline}</p><p>${item.project.detail}</p><div class="archive-tech">${item.project.tech.split(" · ").map((tech) => `<span>${tech}</span>`).join("")}</div><a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div>
+        <div class="archive-preview-stack"><a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.project.name}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number)}<span class="archive-window-corner" aria-hidden="true">↗</span></a>${supportingUI(item.project)}</div>
+      </div>
+    </article>`;
+  }).join("");
+  const index = cards.map((item, i) => {
+    const number = String(i + 1).padStart(2, "0");
+    return `<a class="archive-index-item${i ? "" : " is-selected"}" href="#archive-project-${number}" data-project-nav aria-label="Go to ${item.label}" aria-current="${i ? "false" : "location"}"><i>${number}</i><span>${item.label}</span></a>`;
+  }).join("");
+  const homeLinks = singlePage ? `<a href="#about">About me <span>↗</span></a><a href="#experience">Experience <span>↗</span></a><a href="#contact">Let&rsquo;s connect <span>↗</span></a>` : `<a href="./about.html">About me <span>↗</span></a><a href="./experience.html">Experience <span>↗</span></a><a href="./contact.html">Let&rsquo;s connect <span>↗</span></a>`;
+  return `<section class="archive-page${singlePage ? " journey-chapter integrated-projects" : ""}"${singlePage ? ' id="projects" data-journey-section' : ""}>
+    <section class="archive-intro shell"><div class="archive-intro-copy"><div class="eyebrow">${singlePage ? "03 / CODE TO CREATION" : "PROJECT ARCHIVE · 2026"}</div><h${singlePage ? "2" : "1"} class="display archive-title">PROJECTS</h${singlePage ? "2" : "1"}><p>Five projects, each with its own story and point of view.</p></div><div class="archive-peeks" aria-hidden="true"><span class="archive-peek archive-peek-one"><img src="./assets/porchlight.webp" alt="" decoding="async" width="1546" height="2048"></span><span class="archive-peek archive-peek-two"><img src="./assets/rock-paper-scissors.webp" alt="" decoding="async" width="1278" height="787"></span><span class="archive-peek archive-peek-three"><img src="./assets/blueprint.webp" alt="" decoding="async" width="1284" height="2048"></span><b>01 → 05</b></div></section>
+    <nav class="archive-index archive-showcase-index" aria-label="Jump to a project">${index}</nav>
+    <section class="archive-showcase" aria-label="Five individual project case studies">${stages}</section>
+    <section class="archive-end shell"><div><div class="eyebrow">${singlePage ? "SYSTEM RETURN" : "MORE TO EXPLORE"}</div><h2>${singlePage ? "Back to the<br>main journey." : "From projects<br>to what&rsquo;s next."}</h2></div><div class="archive-end-links">${homeLinks}</div></section>${singlePage ? '<div class="journey-chapter-no">03 <span>PROJECTS</span></div>' : ""}
+  </section>`;
+}
 function showVerse(show) {
   versePanel.classList.toggle("is-open", show);
   versePanel.toggleAttribute("inert", !show);
@@ -522,49 +685,29 @@ if (singlePage) {
   document.querySelectorAll(".project-intro,#work-traverse,.home-band,.home-contact").forEach((section) => section.remove());
   const about = `<section class="journey-about journey-chapter" id="about" data-journey-section><div class="shell journey-about-grid"><div class="journey-about-copy"><div class="eyebrow">02 / A LITTLE ABOUT ME</div><h2 class="display">Curious by<br>nature.<br><span>Building by doing.</span></h2><p>I’m Daniel Fasan, a T Level Digital Software Development student at EKC Canterbury College. I enjoy building websites, experimenting with software, working with data and developing practical IT skills.</p><div class="journey-interests"><span>TECHNOLOGY</span><span>WEB DEVELOPMENT</span><span>COMPUTER SCIENCE</span><span>CYBERSECURITY</span><span>AI</span></div></div><div class="about-collage journey-profile" aria-label="Digital software development notebook"><div class="collage-orbit"><span class="collage-orbit-dot"></span></div><div class="collage-paper"><small>DANIEL FASAN / DIGITAL &amp; IT</small><strong>Ideas into<br>interfaces.</strong><i></i></div></div></div><div class="journey-chapter-no">02 <span>ABOUT</span></div></section>`;
 
-  const archiveMain = [
-    { project: projects.find((item) => item.id === "porchlight"), title: "PORCHLIGHT SUPPORT FINDER", description: "A multi-page hub for support services, locations and Google Maps links, practical guidance, donations and volunteering.", tech: "HTML · CSS · JavaScript" },
-    { project: projects.find((item) => item.id === "ticket"), title: "CONFERENCE TICKET GENERATOR", description: "Enter a name, email and GitHub username to create a personalised conference-style ticket.", tech: "HTML · CSS · JavaScript" },
-    { project: projects.find((item) => item.id === "bank"), title: "DIGITALBANK", description: "A responsive digital banking landing page focused on layout, navigation and modern frontend styling.", tech: "HTML · CSS · JavaScript" },
-  ];
-  const archiveStage = (item, number, index) => `<article class="archive-scene archive-scene-project${item.project.id === "ticket" ? " archive-ticket" : item.project.id === "porchlight" ? " archive-porchlight" : " archive-bank"}" data-archive-scene="${index}" aria-hidden="${index ? "true" : "false"}"${index ? " inert" : ""}><div class="archive-stage-shell"><a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number, true)}<span class="archive-window-corner" aria-hidden="true">↗</span></a><div class="archive-story"><div class="archive-story-kicker"><span>${number}</span><i></i><span>CASE STUDY</span></div><h2>${item.title}</h2><p>${item.description}</p><div class="archive-tech">${item.tech}</div>${item.project.id === "ticket" ? `<div class="archive-ticket-sequence" aria-label="Name, email and GitHub username become a generated ticket"><span>NAME</span><i></i><span>EMAIL</span><i></i><span>GITHUB</span><i></i><b>TICKET</b></div>` : ""}<a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div></div></article>`;
-  const mainStages = archiveMain.map((item, index) => archiveStage(item, `0${index + 1}`, index)).join("");
-  const practice = ["rps", "blueprint"].map((id) => projects.find((item) => item.id === id));
-  const practiceStrip = practice.map((item) => `<a class="archive-strip-item" href="${item.url}" target="_blank" rel="noreferrer" aria-label="Visit ${item.name}" data-cursor="project"><span class="archive-strip-preview">${preview(item.art, false, "", true)}</span><span class="archive-strip-meta"><strong>${item.name}</strong><small>${item.tech}</small></span><b class="archive-strip-arrow" aria-hidden="true">↗</b></a>`).join("");
-  const archiveNames = ["PORCHLIGHT SUPPORT FINDER", "CONFERENCE TICKET GENERATOR", "DIGITALBANK", "FRONT-END MENTOR PROJECTS", "PYTHON / DATA PROJECTS"];
-  const archiveFolders = [
-    ["01", "porchlight-support-finder", "Porchlight Support Finder", "porchlight.webp"],
-    ["02", "conference-ticket-generator", "Conference Ticket Generator", "desktop-design-ticket.webp"],
-    ["03", "digitalbank", "Digitalbank", "digitalbank.webp"],
-    ["04", "frontend-mentor-projects", "Front-End Mentor Projects", "rock-paper-scissors.webp"],
-    ["05", "python-data-projects", "Python / Data Projects", "python-data-workflow.svg"],
-  ];
-  const projectIndex = archiveFolders.map(([number, folder, label, image], index) => `<button type="button" class="archive-index-item${index === 0 ? " is-selected" : ""}" style="--folder-index:${index}" data-archive-go="${index}" data-command="${folder}"${image ? ` data-preview-source="./assets/${image}"` : ""} aria-label="Enter project ${number}: ${label}" aria-current="${index === 0 ? "step" : "false"}"><i>${number}</i><span>${folder}/</span><b aria-hidden="true">&#8599;</b></button>`).join("");
-  const projectsChapter = `<section class="archive-page journey-chapter" id="projects" data-journey-section>
-    <div class="archive-intro shell">
-      <div class="archive-intro-copy"><div class="eyebrow">03 / CODE TO CREATION</div><h2 class="display archive-title">PROJECTS</h2><p>Things I&rsquo;ve built while learning, experimenting and developing.</p><div class="archive-intro-note"><span>05 DIRECTORIES</span><i></i><span>SCROLL TO EXPLORE</span></div></div>
-      <div class="archive-terminal" aria-label="Daniel Fasan project workspace">
-        <div class="archive-terminal-head"><span class="terminal-lights" aria-hidden="true"><i></i><i></i><i></i></span><strong>DANIEL@PORTFOLIO</strong><span class="terminal-status"><i></i> WORKSPACE / ONLINE</span></div>
-        <div class="archive-terminal-path"><b>~/projects</b><span>LOCAL INDEX / 05</span></div>
-        <div class="archive-terminal-command" aria-hidden="true"><span>$</span> ls --projects</div>
-        <nav class="archive-file-list" aria-label="Project directories">${projectIndex}</nav>
-        <div class="archive-terminal-prompt" aria-hidden="true"><span>$</span> open <b class="archive-command-target">porchlight-support-finder</b><i class="terminal-cursor">_</i></div>
-        <div class="archive-terminal-foot"><span>SCROLL OR SELECT A DIRECTORY</span><span class="terminal-identity">DF <i>+</i> &#123; &#125;</span></div>
-        <div class="archive-cursor-preview" aria-hidden="true"><img alt="" loading="lazy" decoding="async" width="700" height="450"><span>PROJECT 01</span></div>
-      </div>
-    </div>
-    <div class="archive-progress" aria-live="polite"><b>01</b><i>/</i><span>05</span></div>
-    <section class="archive-journey" aria-label="Five project chapters"><svg class="archive-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g></svg><div class="archive-pinned"><div class="archive-presentation">${mainStages}
-        <article class="archive-scene archive-scene-practice" data-archive-scene="3" aria-hidden="true" inert><div class="archive-practice-layout"><div class="archive-story"><div class="archive-story-kicker"><span>04</span><i></i><span>COLLECTION</span></div><h2>FRONT-END MENTOR PROJECTS</h2><p>Interactive builds and responsive interfaces from my frontend practice.</p><div class="archive-tech">HTML &middot; CSS &middot; JavaScript</div><small class="archive-practice-note">A few builds from the archive</small></div><div class="archive-strip" aria-label="Front-end project previews">${practiceStrip}</div></div></article>
-      <article class="archive-scene archive-scene-data" data-archive-scene="4" aria-hidden="true" inert><div class="archive-data-layout"><div class="archive-data-board" aria-label="Python data workflow"><div class="archive-board-top"><span>WORKFLOW / 05</span><span>PYTHON + DATA</span></div><div class="data-node data-node-python"><b>Py</b><span>PYTHON</span></div><div class="data-branch"></div><div class="data-tools"><span>PANDAS</span><span>MATPLOTLIB</span><span>SQLITE</span></div><div class="data-flow"><i>HANDLE</i><b>&rarr;</b><i>FILTER</i><b>&rarr;</b><i>VISUALISE</i></div><div class="archive-board-foot">TEST &middot; DEBUG &middot; REFINE</div></div><div class="archive-story"><div class="archive-story-kicker"><span>05</span><i></i><span>TOOLS IN PRACTICE</span></div><h2>PYTHON / DATA PROJECTS</h2><p>Practical work with data handling, filtering, visualisation, testing, debugging and SQLite.</p><div class="archive-tech">Python &middot; pandas &middot; matplotlib &middot; SQLite</div></div></div></article>
-      </div><div class="archive-current-label"><span>PROJECT MODE / SCROLL</span><i></i><strong>01 / PORCHLIGHT SUPPORT FINDER</strong></div></div></section>
-    <section class="archive-end shell"><div><div class="eyebrow">SYSTEM RETURN</div><h2>Back to the<br>main journey.</h2></div><div class="archive-end-links"><a href="#about">About me <span>&#8599;</span></a><a href="#experience">Experience <span>&#8599;</span></a><a href="#contact">Let&rsquo;s connect <span>&#8599;</span></a></div></section><div class="journey-chapter-no">03 <span>PROJECTS</span></div></section>`;
+  const projectsChapter = projectShowcaseMarkup(true);
 
   const timelineItems = [work[1], work[0], ...work.slice(2)];
   const experience = `<section class="journey-experience journey-chapter" id="experience" data-journey-section><div class="shell journey-section-head"><div><div class="eyebrow">04 / EXPERIENCE</div><h2 class="display">Learning<br>in the real world.</h2></div><p>People, places and practical work that shape how I learn.</p></div><div class="shell timeline-wrap journey-timeline"><aside class="timeline-index"><div class="eyebrow">KENT COUNTY COUNCIL</div><h3>Dover Library</h3><p>Industry placement student</p></aside>${timelineMarkup(timelineItems)}</div><div class="journey-chapter-no">04 <span>EXPERIENCE</span></div></section>`;
-  const education = `<section class="journey-education journey-chapter" id="education" data-journey-section><div class="shell journey-section-head"><div><div class="eyebrow">05 / EDUCATION + SKILLS</div><h2 class="display">Building my<br>foundations.</h2></div><p>Learning software development through study, projects and practice.</p></div><div class="shell journey-education-grid"><div class="education-path"><article class="education-node"><i>01</i><small>YEAR 2 / CURRENT</small><h3>T Level Digital Software Development</h3><p>EKC Canterbury College</p></article><article class="education-node"><i>02</i><small>PREVIOUS STUDY</small><h3>BTEC Level 2 IT / Extended Certificate in ICT</h3><p>Double Award: Merit/Pass</p></article></div><div class="skill-system"><div class="skill-system-head"><span>TOOLS / PRACTICE</span><span>01—12</span></div><div class="skill-nodes">${["HTML", "CSS", "JavaScript", "Python", "GitHub", "VS Code", "pandas", "matplotlib", "SQLite", "Windows / Linux", "PC hardware", "Troubleshooting"].map((name, index) => `<span class="skill-node" style="--skill-delay:${index * 35}ms" tabindex="0">${name}</span>`).join("")}</div><div class="skill-system-foot"><i></i> LEARN · TEST · REFINE</div></div></div><div class="journey-chapter-no">05 <span>EDUCATION / SKILLS</span></div></section>`;
+  const education = `<section class="journey-education journey-chapter" id="education" data-journey-section><div class="shell journey-section-head"><div><div class="eyebrow">05 / EDUCATION + SKILLS</div><h2 class="display">Building my<br>foundations.</h2></div><p>Learning software development through study, projects and practice.</p></div><div class="shell journey-education-grid"><div class="education-path"><article class="education-node"><i>01</i><small>YEAR 2 / CURRENT</small><h3>T Level Digital Software Development</h3><p>EKC Canterbury College</p></article><article class="education-node"><i>02</i><small>PREVIOUS STUDY</small><h3>BTEC Level 2 IT / Extended Certificate in ICT</h3><p>Double Award: Merit/Pass</p></article></div><div class="skill-system" id="skills" data-journey-section><div class="skill-system-head"><span>TOOLS / PRACTICE</span><span>01—12</span></div><div class="skill-nodes">${["HTML", "CSS", "JavaScript", "Python", "GitHub", "VS Code", "pandas", "matplotlib", "SQLite", "Windows / Linux", "PC hardware", "Troubleshooting"].map((name, index) => `<span class="skill-node" style="--skill-delay:${index * 35}ms" tabindex="0">${name}</span>`).join("")}</div><div class="skill-system-foot"><i></i> LEARN · TEST · REFINE</div></div></div><div class="journey-chapter-no">05 <span>EDUCATION / SKILLS</span></div></section>`;
   const contact = `<section class="journey-contact journey-chapter" id="contact" data-journey-section><div class="shell contact-canvas"><div class="contact-copy"><div class="eyebrow">06 / THE DESTINATION</div><h2 class="display">Have a project<br>or opportunity?</h2><p>I’m always glad to connect about digital projects, learning opportunities and work that helps people.</p><a class="button button-light contact-mail-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello <span>↗</span></a></div><div class="contact-links"><a class="contact-link" href="mailto:${LINKS.email}" data-cursor="email"><span>Email<small>${LINKS.email}</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.instagram}" target="_blank" rel="noreferrer"><span>Instagram<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.linkedin}" target="_blank" rel="noreferrer"><span>LinkedIn<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.github}" target="_blank" rel="noreferrer"><span>GitHub<small>See what I’m building</small></span><span class="contact-symbol">↗</span></a></div><div class="contact-core-wrap"><nav class="contact-core-actions" aria-label="Core destinations"><a href="#about" data-core-target="about">ABOUT</a><a href="#projects" data-core-target="projects">PROJECTS</a><a href="#contact" data-core-target="contact">CONTACT</a></nav><div class="contact-emblem" data-cursor="drag" role="button" aria-label="Drag the DF core to a destination" aria-describedby="core-readout" tabindex="0"><video class="wall-video" autoplay muted loop playsinline poster="https://images.pexels.com/videos/8516677/free-video-8516677.jpg?auto=compress&amp;cs=tinysrgb&amp;w=1000"><source src="https://videos.pexels.com/video-files/8516677/8516677-hd_1080_1920_25fps.mp4" type="video/mp4"></video><strong>DF</strong><span class="drag-tip">Drag me / route</span></div><div class="contact-core-readout" id="core-readout" aria-live="polite">DRAG DF INTO A DESTINATION</div></div></div><div class="journey-chapter-no">06 <span>CONTACT</span></div></section>`;
   scene.insertAdjacentHTML("beforeend", about + projectsChapter + experience + education + contact);
+  const projectSections = [...document.querySelectorAll("#projects [data-project-section]")];
+  if (projectSections.length && "IntersectionObserver" in window) {
+    const projectNavItems = [...document.querySelectorAll("#projects [data-project-nav]")];
+    const projectSectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => entry.target.classList.toggle("is-in-view", entry.isIntersecting));
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      const activeIndex = projectSections.indexOf(visible.target);
+      projectNavItems.forEach((link, index) => {
+        if (index === activeIndex) link.setAttribute("aria-current", "location");
+        else link.removeAttribute("aria-current");
+        link.classList.toggle("is-selected", index === activeIndex);
+      });
+    }, { rootMargin: "-35% 0px -50% 0px", threshold: [0, .15, .35, .65] });
+    projectSections.forEach((section) => projectSectionObserver.observe(section));
+  }
   const aboutLink = document.querySelector('.hero-actions a[href="./about.html"]');
   if (aboutLink) aboutLink.href = "#about";
 }
@@ -634,7 +777,7 @@ if (singlePage) {
     if (visible) setActiveChapter(visible.target.id);
   }, { rootMargin: "-30% 0px -50% 0px", threshold: [0, .15, .4, .7] });
   chapterElements.forEach((section) => chapterObserver.observe(section));
-  document.querySelectorAll('.nav-link[href^="#"],.footer-links a[href^="#"],.brand[href^="#"],.archive-end-links a[href^="#"],.hero-actions a[href^="#"],.contact-core-actions a[href^="#"]').forEach((link) => link.addEventListener("click", (event) => {
+  document.querySelectorAll('.nav-link[href^="#"],.footer-links a[href^="#"],.brand[href^="#"],.archive-end-links a[href^="#"],.archive-showcase-index a[href^="#"],.hero-actions a[href^="#"],.contact-core-actions a[href^="#"]').forEach((link) => link.addEventListener("click", (event) => {
     const target = document.querySelector(link.hash);
     if (!target) return;
     event.preventDefault();

@@ -45,9 +45,14 @@
     };
     const intro = document.querySelector(".page-intro");
     if (document.documentElement.dataset.singlePage === "true") {
-      [["01", "HOME", "home"], ["02", "ABOUT", "about"], ["03", "PROJECTS", "projects"], ["04", "EXPERIENCE", "experience"], ["05", "EDUCATION", "education"], ["06", "CONTACT", "contact"]].forEach(([number, name, id]) => {
+      [["01", "HOME", "home"], ["02", "ABOUT", "about"], ["03", "PROJECTS", "projects"], ["04", "EXPERIENCE", "experience"], ["05", "EDUCATION", "education"], ["06", "SKILLS", "skills"], ["07", "CONTACT", "contact"]].forEach(([number, name, id]) => {
         const chapter = document.getElementById(id);
         add(`${number} / ${name}`, chapter, id, chapter ? pageTop(chapter) : null);
+      });
+      document.querySelectorAll("#projects [data-project-section]").forEach((chapter, index) => {
+        const number = String(index + 1).padStart(2, "0");
+        const name = chapter.querySelector("h2")?.textContent || "PROJECT";
+        add(`${number} / ${name}`, chapter, "projects");
       });
     } else if (page === "home") {
       add("HOME", document.querySelector(".home-hero"), "home", 0);

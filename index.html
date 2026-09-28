@@ -10,10 +10,10 @@
           localStorage.getItem("portfolio-theme") || "day";
         if (
           !matchMedia("(prefers-reduced-motion: reduce)").matches &&
-          !sessionStorage.getItem("df-identity-opening-seen")
+          (new URLSearchParams(location.search).get("intro") === "1" ||
+            !sessionStorage.getItem("df-identity-opening-seen"))
         ) {
           document.documentElement.dataset.showIntro = "true";
-          sessionStorage.setItem("df-identity-opening-seen", "1");
         }
       } catch {
         document.documentElement.dataset.theme = "day";
@@ -35,7 +35,15 @@
     <script src="./car-scrollbar.js" defer></script>
   </head>
   <body>
-    <div class="identity-opening" aria-hidden="true"><span class="identity-initials">DF</span><span class="identity-name"><b>DANIEL</b><i>FASAN.</i></span></div>
+    <div class="identity-opening" role="presentation" aria-hidden="true">
+      <p class="intro-caption">PORTFOLIO / 2026</p>
+      <div class="intro-road" aria-hidden="true"><i></i></div>
+      <div class="intro-car" aria-hidden="true"><div class="intro-car-bounce"></div></div>
+      <h1 class="intro-name" aria-hidden="true"><span style="--letter-index:0"><i>D</i></span><span style="--letter-index:1"><i>A</i></span><span style="--letter-index:2"><i>N</i></span><span style="--letter-index:3"><i>I</i></span><span style="--letter-index:4"><i>E</i></span><span style="--letter-index:5"><i>L</i></span><span class="intro-space" style="--letter-index:6"><i>&nbsp;</i></span><span style="--letter-index:7"><i>F</i></span><span style="--letter-index:8"><i>A</i></span><span style="--letter-index:9"><i>S</i></span><span style="--letter-index:10"><i>A</i></span><span style="--letter-index:11"><i>N</i></span><span class="intro-accent" style="--letter-index:12"><i>.</i></span></h1>
+      <p class="intro-subtitle">Front-end developer / Building useful, playful digital experiences.</p>
+      <p class="intro-counter" aria-hidden="true"><span>000</span><i>%</i></p>
+      <button class="intro-skip" type="button">Skip intro</button>
+    </div>
     <header id="site-header"></header>
     <main id="scene"></main>
     <footer id="site-footer"></footer>
