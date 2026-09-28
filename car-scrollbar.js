@@ -24,6 +24,7 @@
   let targetCarY = 0;
   let carVelocity = 0;
   let carTravel = 0;
+  let pageMaxScroll = 0;
   let markers = [];
   let previousNearest = -1;
   let previousPercent = -1;
@@ -36,6 +37,7 @@
 
   function buildAnchors() {
     carTravel = Math.max(0, track.clientHeight - car.offsetHeight);
+    pageMaxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
     const anchorsNext = [];
     const add = (label, element, region, top = null) => {
       if (!element && top === null) return;
@@ -62,13 +64,12 @@
       add("CONTACT", document.querySelector(".home-contact"), "contact");
     } else if (page === "projects") {
       add("WORK", intro, "projects");
-      const archive = document.querySelector(".archive-journey");
-      if (archive) {
-        const start = pageTop(archive);
-        const travel = Math.max(0, archive.offsetHeight - innerHeight);
-        const chapters = [["01", "PORCHLIGHT"], ["02", "TICKET"], ["03", "DIGITALBANK"], ["04", "FRONT-END"], ["05", "PYTHON / DATA"]];
-        chapters.forEach(([number, name], index) => {
-          add(`${number} / ${name}`, archive, "projects", start + travel * index / (chapters.length - 1));
+      const chapters = [...document.querySelectorAll("[data-project-section]")];
+      if (chapters.length) {
+        chapters.forEach((chapter, index) => {
+          const number = String(index + 1).padStart(2, "0");
+          const name = chapter.querySelector("h2")?.textContent || "PROJECT";
+          add(`${number} / ${name}`, chapter, "projects");
         });
       } else {
         document.querySelectorAll(".project-card").forEach((card, index) => {
@@ -95,16 +96,14 @@
       `<button class="road-marker" type="button" style="--marker-index:${index}" aria-label="Go to ${anchor.label}" data-road-index="${index}"><i aria-hidden="true"></i><span aria-hidden="true">${anchor.label}</span></button>`,
     ).join("");
     markers = [...markersNode.querySelectorAll(".road-marker")];
-    const pageMax = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-    anchors.forEach((anchor, index) => markers[index]?.style.setProperty("--marker-y", `${Math.min(100, Math.max(0, anchor.top / pageMax * 100))}%`));
+    anchors.forEach((anchor, index) => markers[index]?.style.setProperty("--marker-y", `${Math.min(100, Math.max(0, anchor.top / Math.max(1, pageMaxScroll) * 100))}%`));
     previousNearest = -1;
     update();
   }
 
   function update() {
     frame = 0;
-    const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-    const progress = Math.min(1, Math.max(0, scrollY / max));
+    const progress = Math.min(1, Math.max(0, scrollY / Math.max(1, pageMaxScroll)));
     targetCarY = carTravel * progress;
     if (!motionFrame) motionFrame = requestAnimationFrame(animateCar);
     const percent = Math.round(progress * 100);
@@ -177,7 +176,7 @@
     if (event.target.closest(".road-car,.road-marker")) return;
     const bounds = track.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
-    window.scrollTo({ top: ratio * Math.max(0, document.documentElement.scrollHeight - innerHeight), behavior: "smooth" });
+    window.scrollTo({ top: ratio * pageMaxScroll, behavior: "smooth" });
   });
   markersNode.addEventListener("click", (event) => {
     const marker = event.target.closest("[data-road-index]");
@@ -203,9 +202,7 @@
   });
   car.addEventListener("pointermove", (event) => {
     if (!dragging) return;
-    const trackTravel = Math.max(1, track.clientHeight - car.offsetHeight);
-    const pageTravel = Math.max(0, document.documentElement.scrollHeight - innerHeight);
-    window.scrollTo(0, startScroll + (event.clientY - startY) / trackTravel * pageTravel);
+    window.scrollTo(0, startScroll + (event.clientY - startY) / Math.max(1, carTravel) * pageMaxScroll);
   });
   function release() {
     if (!dragging) return;
@@ -217,11 +214,10 @@
   car.addEventListener("pointerup", release);
   car.addEventListener("pointercancel", release);
   car.addEventListener("keydown", (event) => {
-    const pageTravel = Math.max(0, document.documentElement.scrollHeight - innerHeight);
     const moves = { ArrowDown: 48, ArrowRight: 48, ArrowUp: -48, ArrowLeft: -48, PageDown: innerHeight * 0.85, PageUp: -innerHeight * 0.85 };
     if (event.key === "Home" || event.key === "End") {
       event.preventDefault();
-      window.scrollTo({ top: event.key === "Home" ? 0 : pageTravel, behavior: "smooth" });
+      window.scrollTo({ top: event.key === "Home" ? 0 : pageMaxScroll, behavior: "smooth" });
     } else if (event.key in moves) {
       event.preventDefault();
       window.scrollTo({ top: scrollY + moves[event.key], behavior: "smooth" });

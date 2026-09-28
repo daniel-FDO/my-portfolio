@@ -21,6 +21,8 @@ const projects = [
     tech: "HTML · CSS · JavaScript",
     url: "https://porchlightwebproj.netlify.app/",
     image: "porchlight.webp",
+    imageWidth: 1546,
+    imageHeight: 2048,
     art: "art-porch",
   },
   {
@@ -34,8 +36,10 @@ const projects = [
       "A career tools platform with a professional CV builder at its centre. Its landing page introduces the product, the guided CV flow and tools planned for later.",
     feature: "Career tools · CV builder",
     tech: "HTML · CSS · JavaScript",
-    url: "https://blueprint-wig.onrender.com/",
+    url: "https://blueprint-vwig.onrender.com/",
     image: "blueprint.webp",
+    imageWidth: 1284,
+    imageHeight: 2048,
     art: "art-blueprint",
   },
   {
@@ -51,6 +55,8 @@ const projects = [
     tech: "HTML · CSS · JavaScript",
     url: "https://digitalbankingweb.netlify.app/",
     image: "digitalbank.webp",
+    imageWidth: 1627,
+    imageHeight: 2048,
     art: "art-bank",
   },
   {
@@ -65,6 +71,8 @@ const projects = [
     tech: "JavaScript · HTML · CSS",
     url: "https://rock-paper-scissors-daniel.netlify.app/",
     image: "rock-paper-scissors.webp",
+    imageWidth: 1278,
+    imageHeight: 787,
     art: "art-rps",
   },
   {
@@ -78,6 +86,8 @@ const projects = [
     tech: "HTML · CSS · JavaScript",
     url: "https://vermillion-panda-960b32.netlify.app/",
     image: "desktop-design-ticket.webp",
+    imageWidth: 1440,
+    imageHeight: 1024,
     art: "art-ticket",
   },
 ];
@@ -187,7 +197,7 @@ function preview(kind, full = false, numberOverride = "", deferImage = false) {
   const item = projects.find((project) => project.art === kind);
   if (!item) return "";
   const imageAttribute = deferImage ? `data-src="./assets/${item.image}"` : `src="./assets/${item.image}"`;
-  return `<div class="preview preview-photo ${kind}${full ? " full-preview" : ""}" aria-label="${item.name} supplied screenshot"><img ${imageAttribute} alt="${item.name} website screenshot" loading="lazy" draggable="false"><span class="image-label">${numberOverride || item.number} / ${item.category}</span><span class="image-corner" aria-hidden="true">↗</span></div>`;
+  return `<div class="preview preview-photo ${kind}${full ? " full-preview" : ""}" aria-label="${item.name} supplied screenshot"><img ${imageAttribute} alt="${item.name} website screenshot" loading="lazy" decoding="async" width="${item.imageWidth}" height="${item.imageHeight}" draggable="false"><span class="image-label">${numberOverride || item.number} / ${item.category}</span><span class="image-corner" aria-hidden="true">↗</span></div>`;
 }
 
 function projectCard(project, index, feature = false) {
@@ -203,19 +213,31 @@ document.body.classList.add("js-ready");
 const portfolioScrollTasks = new Set();
 let portfolioScrollFrame = 0;
 const portfolioScrollState = { y: window.scrollY, max: 1, progress: 0 };
+function refreshPortfolioScrollMetrics() {
+  portfolioScrollState.max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+}
 function schedulePortfolioScroll() {
   if (portfolioScrollFrame) return;
   portfolioScrollFrame = requestAnimationFrame(() => {
     portfolioScrollFrame = 0;
     portfolioScrollState.y = window.scrollY;
-    portfolioScrollState.max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     portfolioScrollState.progress = Math.min(1, Math.max(0, portfolioScrollState.y / portfolioScrollState.max));
     portfolioScrollTasks.forEach((task) => task(portfolioScrollState));
   });
 }
 window.addPortfolioScrollTask = (task) => portfolioScrollTasks.add(task);
 window.addEventListener("scroll", schedulePortfolioScroll, { passive: true });
-window.addEventListener("resize", schedulePortfolioScroll, { passive: true });
+window.addEventListener("resize", () => {
+  refreshPortfolioScrollMetrics();
+  schedulePortfolioScroll();
+}, { passive: true });
+if ("ResizeObserver" in window) {
+  const portfolioResizeObserver = new ResizeObserver(() => {
+    refreshPortfolioScrollMetrics();
+    schedulePortfolioScroll();
+  });
+  portfolioResizeObserver.observe(document.body);
+}
 const identityOpening = document.querySelector(".identity-opening");
 if (identityOpening) {
   if (document.documentElement.dataset.showIntro === "true") {
@@ -236,16 +258,19 @@ document.body.insertAdjacentHTML("beforeend", `<aside class="music-player" aria-
   <div class="music-details" id="music-details"><div class="music-details-inner">
     <div class="music-progress-row"><span class="music-time-current">0:00</span><input class="music-seek" type="range" min="0" max="1000" value="0" aria-label="Seek through track"><span class="music-time-total">0:00</span></div>
     <div class="music-options"><button class="music-shuffle" type="button" aria-label="Shuffle" aria-pressed="false" title="Shuffle">⤨</button><button class="music-repeat" type="button" aria-label="Repeat playlist" title="Repeat playlist">↻</button><button class="music-mute" type="button" aria-label="Mute" aria-pressed="false">VOL</button><input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.68" aria-label="Volume"><button class="music-queue-toggle" type="button" aria-expanded="false" aria-controls="music-queue">QUEUE</button></div>
-    <div class="music-identity"><img class="music-cover" alt="DF: IN MOTION cover" hidden><div><strong>DF: IN MOTION</strong><span>PORTFOLIO SOUNDTRACK · <span class="music-library-count"></span></span></div></div>
+    <div class="music-identity"><img class="music-cover" alt="DF: IN MOTION cover" decoding="async" width="42" height="42" hidden><div><strong>DF: IN MOTION</strong><span>PORTFOLIO SOUNDTRACK · <span class="music-library-count"></span></span></div></div>
     <div class="music-queue-panel" id="music-queue" inert><ol class="music-queue" aria-label="DF: IN MOTION playlist"></ol></div>
     <div class="music-status" role="status" aria-live="polite"></div>
   </div></div>
 </aside>`);
 
-const themeNames = ["day", "studio", "night"];
-const themePalette = { day: "#F3F1EA", studio: "#D4D3CE", night: "#101111" };
+const themeNames = ["day", "studio", "night", "purple"];
+const themePalette = { day: "#F3F1EA", studio: "#D4D3CE", night: "#101111", purple: "#140D22" };
 const themeToggle = document.querySelector(".theme-toggle");
 const themeMenu = document.querySelector(".theme-menu");
+themeMenu.insertAdjacentHTML("beforeend", '<button type="button" data-theme-choice="purple">PURPLE</button>');
+document.querySelector(".sound-toggle")?.insertAdjacentHTML("afterend", '<button class="verse-toggle" type="button" aria-expanded="false" aria-controls="verse-panel" aria-label="Open random Bible verse">♧ <span>Verse</span></button>');
+document.body.insertAdjacentHTML("beforeend", `<aside class="verse-panel" id="verse-panel" aria-hidden="true" inert><header><div><small>VERSE OF THE MOMENT · KJV</small><button class="verse-close" type="button" aria-label="Close verse">×</button></div><strong class="verse-reference"></strong></header><p class="verse-text"></p><footer><button class="verse-new" type="button">New verse ↻</button><button class="verse-copy" type="button">Copy verse</button><span class="verse-status" role="status"></span></footer></aside>`);
 const themeToast = document.createElement("div");
 themeToast.className = "theme-toast";
 themeToast.setAttribute("aria-live", "polite");
@@ -335,6 +360,77 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeThemeMenu();
 });
 
+const scripture = [
+  ["Psalm 23:1", "The LORD is my shepherd; I shall not want."],
+  ["Psalm 27:1", "The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?"],
+  ["Psalm 46:1", "God is our refuge and strength, a very present help in trouble."],
+  ["Psalm 55:22", "Cast thy burden upon the LORD, and he shall sustain thee: he shall never suffer the righteous to be moved."],
+  ["Psalm 118:24", "This is the day which the LORD hath made; we will rejoice and be glad in it."],
+  ["Proverbs 3:5", "Trust in the LORD with all thine heart; and lean not unto thine own understanding."],
+  ["Proverbs 16:3", "Commit thy works unto the LORD, and thy thoughts shall be established."],
+  ["Isaiah 40:31", "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint."],
+  ["Isaiah 41:10", "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness."],
+  ["Jeremiah 29:11", "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end."],
+  ["Micah 6:8", "He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?"],
+  ["Matthew 5:16", "Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven."],
+  ["Matthew 6:34", "Take therefore no thought for the morrow: for the morrow shall take thought for the things of itself. Sufficient unto the day is the evil thereof."],
+  ["Matthew 11:28", "Come unto me, all ye that labour and are heavy laden, and I will give you rest."],
+  ["Matthew 19:26", "With men this is impossible; but with God all things are possible."],
+  ["Mark 10:27", "With men it is impossible, but not with God: for with God all things are possible."],
+  ["John 8:12", "I am the light of the world: he that followeth me shall not walk in darkness, but shall have the light of life."],
+  ["John 13:34", "A new commandment I give unto you, That ye love one another; as I have loved you, that ye also love one another."],
+  ["John 14:27", "Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid."],
+  ["Romans 8:28", "And we know that all things work together for good to them that love God, to them who are the called according to his purpose."],
+  ["Romans 12:12", "Rejoicing in hope; patient in tribulation; continuing instant in prayer;"],
+  ["Romans 15:13", "Now the God of hope fill you with all joy and peace in believing, that ye may abound in hope, through the power of the Holy Ghost."],
+  ["1 Corinthians 13:4", "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up,"],
+  ["1 Corinthians 16:14", "Let all your things be done with charity."],
+  ["2 Corinthians 12:9", "And he said unto me, My grace is sufficient for thee: for my strength is made perfect in weakness. Most gladly therefore will I rather glory in my infirmities, that the power of Christ may rest upon me."],
+  ["Galatians 6:9", "And let us not be weary in well doing: for in due season we shall reap, if we faint not."],
+  ["Ephesians 4:32", "And be ye kind one to another, tenderhearted, forgiving one another, even as God for Christ's sake hath forgiven you."],
+  ["Philippians 4:6", "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God."],
+  ["Philippians 4:13", "I can do all things through Christ which strengtheneth me."],
+  ["Colossians 3:23", "And whatsoever ye do, do it heartily, as to the Lord, and not unto men;"],
+  ["2 Thessalonians 3:3", "But the Lord is faithful, who shall stablish you, and keep you from evil."],
+  ["Hebrews 10:23", "Let us hold fast the profession of our faith without wavering; (for he is faithful that promised;)"],
+  ["James 1:12", "Blessed is the man that endureth temptation: for when he is tried, he shall receive the crown of life, which the Lord hath promised to them that love him."],
+  ["James 1:5", "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him."],
+  ["1 Peter 5:7", "Casting all your care upon him; for he careth for you."],
+  ["1 John 4:19", "We love him, because he first loved us."],
+];
+const versePanel = document.querySelector(".verse-panel");
+const verseToggle = document.querySelector(".verse-toggle");
+let lastVerse = -1;
+function newVerse() {
+  let index;
+  do index = Math.floor(Math.random() * scripture.length); while (scripture.length > 1 && index === lastVerse);
+  lastVerse = index;
+  versePanel.querySelector(".verse-reference").textContent = scripture[index][0];
+  versePanel.querySelector(".verse-text").textContent = scripture[index][1];
+  versePanel.querySelector(".verse-status").textContent = "King James Version · public domain";
+}
+function showVerse(show) {
+  versePanel.classList.toggle("is-open", show);
+  versePanel.toggleAttribute("inert", !show);
+  versePanel.setAttribute("aria-hidden", String(!show));
+  verseToggle.setAttribute("aria-expanded", String(show));
+  if (show) {
+    const music = document.querySelector(".music-player");
+    music?.classList.remove("is-open");
+    music?.setAttribute("aria-hidden", "true");
+    if (music) music.inert = true;
+    newVerse();
+  }
+}
+verseToggle?.addEventListener("click", () => showVerse(!versePanel.classList.contains("is-open")));
+versePanel.querySelector(".verse-close").addEventListener("click", () => showVerse(false));
+versePanel.querySelector(".verse-new").addEventListener("click", newVerse);
+versePanel.querySelector(".verse-copy").addEventListener("click", async () => {
+  const text = `${versePanel.querySelector(".verse-text").textContent} — ${versePanel.querySelector(".verse-reference").textContent} (KJV)`;
+  try { await navigator.clipboard.writeText(text); versePanel.querySelector(".verse-status").textContent = "Copied to clipboard"; }
+  catch { versePanel.querySelector(".verse-status").textContent = text; }
+});
+
 const scene = document.querySelector("#scene");
 const timelineMarkup = (items) =>
   `<div class="timeline-list">${items.map((item, i) => `<article class="timeline-item reveal" tabindex="0" role="button" aria-expanded="false"><div class="timeline-date">${item.date}</div><h3>${item.title}</h3><div class="timeline-meta">${item.org} · ${item.mode}</div><p>${item.text}</p><div class="timeline-detail">${item.detail}</div></article>`).join("")}</div>`;
@@ -354,51 +450,44 @@ if (page === "home") {
   scene.innerHTML = `<section class="home-hero"><div class="hero-copy shell"><div class="eyebrow">MY WORK · MY JOURNEY · MY IDEAS</div><h1 class="display hero-title" aria-label="Daniel Fasan"><span class="line name-line"><span>DANIEL</span></span><span class="line name-line"><span class="accent">FASAN.</span></span></h1><div class="hero-subrow"><div><p>I’m an aspiring IT professional who learns by building. I enjoy turning ideas into useful websites and applications, and exploring the technology behind them — from data to hardware.</p><div class="hero-actions"><a class="button button-light" href="#work-traverse">Explore my work <span>↗</span></a><a class="button button-outline" href="./about.html">More about me <span>↗</span></a></div></div></div></div><div class="hero-orbit"><span class="orbit-mark" aria-hidden="true"></span><button class="orbit-card" type="button" data-notebook aria-expanded="false" aria-label="Open Daniel's digital notebook"></button></div><div class="hero-lines" aria-hidden="true"><i></i><i></i><i></i></div><div class="hero-hint"><span class="hint-wheel">↓</span> Scroll to explore</div></section><section class="project-intro shell"><div><div class="eyebrow">My projects · scroll to explore</div><h2>Things I've built.</h2></div><p>Projects I've built while exploring web development, software and digital systems.</p></section><section class="scroll-stage" id="work-traverse" aria-label="My five projects"><div class="scroll-pinned"><div class="project-presentation">${homeScenes}</div><div class="rail-footer shell"><span class="project-counter" aria-live="polite">01 <i>—</i> ${String(projects.length).padStart(2, "0")}</span><div class="rail-progress" role="progressbar" aria-label="Project journey" aria-valuemin="1" aria-valuemax="${projects.length}" aria-valuenow="1"><i></i></div><div class="scene-steps" aria-label="Choose a project">${projects.map((project, index) => `<button type="button" data-project-step="${index}" aria-label="Go to project ${project.number}: ${project.name}" aria-current="${index === 0 ? "step" : "false"}">${project.number}</button>`).join("")}</div><a class="button button-dark" href="./projects.html">All my projects <span>↗</span></a></div></div></section><section class="home-band"><div class="shell"><div class="eyebrow">A little about me</div><div class="snapshot-grid"><h2>Curious by<br>nature.<br>Building by doing.</h2><div class="snapshot-cards"><article class="snapshot-card" tabindex="0"><span class="snapshot-number">01</span><span class="snapshot-indicator"></span><small>Current focus</small><strong>Software development</strong><p>Studying at EKC Canterbury College.</p></article><article class="snapshot-card" tabindex="0"><span class="snapshot-number">02</span><span class="snapshot-indicator"></span><small>Learning through</small><strong>Python · JavaScript</strong><p>Web development, software and data.</p></article><article class="snapshot-card" tabindex="0"><span class="snapshot-number">03</span><span class="snapshot-indicator"></span><small>On placement</small><strong>Kent County Council</strong><p>Dover Library · visitor support and library operations.</p></article><article class="snapshot-card" tabindex="0"><span class="snapshot-number">04</span><span class="snapshot-indicator"></span><small>Exploring next</small><strong>Cybersecurity · AI</strong><p>Interested in computer science, IT and emerging technology.</p></article></div></div></div></section><section class="home-contact"><div class="shell home-contact-inner"><div><div class="eyebrow">One more thing</div><h2>Have a project<br>or opportunity?</h2></div><a class="button button-light" href="mailto:${LINKS.email}" data-cursor="email">Say hello <span>↗</span></a></div></section>`;
 } else if (page === "projects") {
   const byId = (id) => projects.find((project) => project.id === id);
-  const archiveMain = [
-    {
-      project: byId("porchlight"),
-      title: "PORCHLIGHT SUPPORT FINDER",
-      description: "A multi-page hub for support services, locations and Google Maps links, practical guidance, donations and volunteering.",
-      tech: "HTML · CSS · JavaScript",
-    },
-    {
-      project: byId("ticket"),
-      title: "CONFERENCE TICKET GENERATOR",
-      description: "A JavaScript-powered ticket generator. Enter a name, email and GitHub username to create a personalised conference ticket.",
-      tech: "HTML · CSS · JavaScript",
-    },
-    {
-      project: byId("bank"),
-      title: "DIGITALBANK",
-      description: "A responsive digital banking landing page focused on layout, navigation and modern frontend styling.",
-      tech: "HTML · CSS · JavaScript",
-    },
-  ];
-  const archiveStage = (item, number, index) => `<article class="archive-scene archive-scene-project${item.project.id === "ticket" ? " archive-ticket" : item.project.id === "porchlight" ? " archive-porchlight" : " archive-bank"}" data-archive-scene="${index}" aria-hidden="${index === 0 ? "false" : "true"}"${index ? " inert" : ""}>
-    <div class="archive-stage-shell">
-      <a class="archive-window" href="${item.project.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.title}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number, true)}<span class="archive-window-corner" aria-hidden="true">↗</span></a>
-      <div class="archive-story"><div class="archive-story-kicker"><span>${number}</span><i></i><span>CASE STUDY</span></div><h2>${item.title}</h2><p>${item.description}</p><div class="archive-tech">${item.tech}</div>${item.project.id === "ticket" ? `<div class="archive-ticket-sequence" aria-label="Name, email and GitHub username become a generated ticket"><span>NAME</span><i></i><span>EMAIL</span><i></i><span>GITHUB</span><i></i><b>TICKET</b></div>` : ""}<a class="button button-dark archive-view" href="${item.project.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div>
-    </div>
-  </article>`;
-  const mainStages = archiveMain.map((item, index) => archiveStage(item, `0${index + 1}`, index)).join("");
-  const practiceProjects = [byId("rps"), byId("blueprint")];
-  const practiceStrip = practiceProjects.map((project) => `<a class="archive-strip-item" href="${project.url}" target="_blank" rel="noreferrer" aria-label="Visit ${project.name}" data-cursor="project"><span class="archive-strip-preview">${preview(project.art)}</span><span class="archive-strip-meta"><strong>${project.name}</strong><small>${project.tech}</small></span><b class="archive-strip-arrow" aria-hidden="true">↗</b></a>`).join("");
-  const indexItems = [
-    ["01", "PORCHLIGHT", "porchlight.webp"],
-    ["02", "TICKET", "desktop-design-ticket.webp"],
-    ["03", "DIGITALBANK", "digitalbank.webp"],
-    ["04", "FRONT-END", "rock-paper-scissors.webp"],
-    ["05", "PYTHON / DATA", ""],
-  ];
-  const projectIndex = indexItems.map(([number, label, image], index) => `<button type="button" class="archive-index-item" data-archive-go="${index}" aria-label="Scroll to ${number} ${label}"${image ? ` style="--archive-thumb:url('./assets/${image}')"` : ""}><i>${number}</i><span>${label}</span></button>`).join("");
+  const archiveCards = [
+    { project: byId("porchlight"), label: "Porchlight", title: "PORCHLIGHT SUPPORT FINDER", tagline: "Local help, made easier to find." },
+    { project: byId("rps"), label: "Rock, Paper, Scissors", title: "ROCK, PAPER, SCISSORS", tagline: "A quick round. Clear rules. One more go." },
+    { project: byId("blueprint"), label: "BluePrint", title: "BLUEPRINT", tagline: "A clearer first step toward your next role." },
+    { project: byId("ticket"), label: "Conference Tickets", title: "CONFERENCE TICKET GENERATOR", tagline: "Your conference details, ready to go." },
+    { project: byId("bank"), label: "Digitalbank", title: "DIGITALBANK", tagline: "Digital banking, explained at a glance." },
+  ].map((item) => ({
+    ...item,
+    category: item.category || item.project.category,
+    description: item.description || item.project.detail,
+    tech: item.tech || item.project.tech,
+    url: item.url || item.project.url,
+  }));
+  const archiveCardMedia = (item, number) => {
+    const supportingUI = item.project.id === "blueprint"
+      ? `<div class="archive-float-ui archive-blueprint-builder"><span class="archive-float-label">LIVE CV BUILDER</span><iframe src="https://blueprint-vwig.onrender.com/pages/cvStart.html" title="BluePrint's real CV builder page" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+      : item.project.id === "rps"
+        ? `<div class="archive-float-ui archive-rps-rules"><span class="archive-float-label">THE REAL GAME RULES</span><img src="https://rock-paper-scissors-daniel.netlify.app/images/image-rules.svg" alt="Rock, paper, scissors rules from the live game" loading="lazy" decoding="async" width="304" height="270"></div>`
+        : "";
+    return `<div class="archive-preview-stack"><a class="archive-window" href="${item.url}" target="_blank" rel="noreferrer" aria-label="Open ${item.project.name}" data-cursor="project"><span class="archive-window-bar"><i></i><i></i><i></i><b>DANIEL FASAN / PROJECT ${number}</b></span>${preview(item.project.art, false, number)}<span class="archive-window-corner" aria-hidden="true">↗</span></a>${supportingUI}</div>`;
+  };
+  const archiveStages = archiveCards.map((item, index) => {
+    const number = String(index + 1).padStart(2, "0");
+    return `<article class="archive-case-study project-environment project-${item.project.id}" id="archive-project-${number}" data-project-section aria-labelledby="archive-project-title-${number}">
+      <div class="archive-case-shell">
+        <div class="archive-story"><div class="archive-story-kicker"><span>${number} / 05</span><i></i><span>${item.category}</span></div><h2 id="archive-project-title-${number}">${item.title}</h2><p class="archive-tagline">${item.tagline}</p><p>${item.description}</p><div class="archive-tech">${item.tech.split(" · ").map((tech) => `<span>${tech}</span>`).join("")}</div><a class="button button-dark archive-view" href="${item.url}" target="_blank" rel="noreferrer" data-cursor="link">View project <span>↗</span></a></div>
+        ${archiveCardMedia(item, number)}
+      </div>
+    </article>`;
+  }).join("");
+  const projectIndex = archiveCards.map((item, index) => {
+    const number = String(index + 1).padStart(2, "0");
+    return `<a class="archive-index-item${index ? "" : " is-selected"}" href="#archive-project-${number}" data-project-nav aria-label="Go to ${item.label}" aria-current="${index ? "false" : "location"}"><i>${number}</i><span>${item.label}</span></a>`;
+  }).join("");
   scene.innerHTML = `<div class="archive-page">
-    <section class="archive-intro shell"><div class="archive-intro-copy"><div class="eyebrow">PROJECT ARCHIVE · 2026</div><h1 class="display archive-title">PROJECTS</h1><p>Things I’ve built while learning, experimenting and developing.</p></div><div class="archive-peeks" aria-hidden="true"><span class="archive-peek archive-peek-one"><img src="./assets/porchlight.webp" alt=""></span><span class="archive-peek archive-peek-two"><img src="./assets/desktop-design-ticket.webp" alt=""></span><span class="archive-peek archive-peek-three"><img src="./assets/digitalbank.webp" alt=""></span><b>01 → 05</b></div></section>
-    <nav class="archive-index" aria-label="Project index">${projectIndex}</nav>
-    <div class="archive-progress" aria-live="polite"><b>01</b><i>/</i><span>05</span></div>
-    <section class="archive-journey" aria-label="Five project chapters"><svg class="archive-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g></svg><div class="archive-pinned"><div class="archive-presentation">${mainStages}
-      <article class="archive-scene archive-scene-practice" data-archive-scene="3" aria-hidden="true" inert><div class="archive-practice-layout"><div class="archive-story"><div class="archive-story-kicker"><span>04</span><i></i><span>COLLECTION</span></div><h2>FRONT-END PRACTICE</h2><p>Responsive layouts, forms, DOM work and JavaScript challenges, with the Ticket Generator and Digitalbank featured as standalone case studies above.</p><div class="archive-tech">HTML · CSS · JavaScript</div><small class="archive-practice-note">A few builds from the archive</small></div><div class="archive-strip" aria-label="Front-end project previews">${practiceStrip}</div></div></article>
-      <article class="archive-scene archive-scene-data" data-archive-scene="4" aria-hidden="true" inert><div class="archive-data-layout"><div class="archive-data-board" aria-label="Python data workflow"><div class="archive-board-top"><span>WORKFLOW / 05</span><span>PYTHON + DATA</span></div><div class="data-node data-node-python"><b>Py</b><span>PYTHON</span></div><div class="data-branch"></div><div class="data-tools"><span>PANDAS</span><span>MATPLOTLIB</span><span>SQLITE</span></div><div class="data-flow"><i>HANDLE</i><b>→</b><i>FILTER</i><b>→</b><i>VISUALISE</i></div><div class="archive-board-foot">TEST · DEBUG · REFINE</div></div><div class="archive-story"><div class="archive-story-kicker"><span>05</span><i></i><span>TOOLS IN PRACTICE</span></div><h2>PYTHON / DATA PROJECTS</h2><p>Practical work with data handling, filtering, visualisation, testing, debugging and SQLite.</p><div class="archive-tech">Python · pandas · matplotlib · SQLite</div></div></div></article>
-      </div><div class="archive-current-label"><span>SCROLL TO EXPLORE</span><i></i><strong>01 / PORCHLIGHT</strong></div></div></section>
+    <section class="archive-intro shell"><div class="archive-intro-copy"><div class="eyebrow">PROJECT ARCHIVE · 2026</div><h1 class="display archive-title">PROJECTS</h1><p>Five projects, each with its own story and point of view.</p></div><div class="archive-peeks" aria-hidden="true"><span class="archive-peek archive-peek-one"><img src="./assets/porchlight.webp" alt="" decoding="async" width="1546" height="2048"></span><span class="archive-peek archive-peek-two"><img src="./assets/rock-paper-scissors.webp" alt="" decoding="async" width="1278" height="787"></span><span class="archive-peek archive-peek-three"><img src="./assets/blueprint.webp" alt="" decoding="async" width="1284" height="2048"></span><b>01 → 05</b></div></section>
+    <nav class="archive-index archive-showcase-index" aria-label="Jump to a project">${projectIndex}</nav>
+    <section class="archive-showcase" aria-label="Five individual project case studies">${archiveStages}</section>
     <section class="archive-end shell"><div><div class="eyebrow">MORE TO EXPLORE</div><h2>From projects<br>to what’s next.</h2></div><div class="archive-end-links"><a href="./about.html">About me <span>↗</span></a><a href="./experience.html">Experience <span>↗</span></a><a href="./contact.html">Let’s connect <span>↗</span></a></div></section>
   </div>`;
 } else if (page === "about") {
@@ -407,6 +496,25 @@ if (page === "home") {
   scene.innerHTML = `<section class="shell page-intro"><div class="eyebrow">Experience · education · practice</div><h1 class="display">Learning<br>by doing.</h1><p>Study, work and virtual experiences that shape how I build and collaborate.</p></section><section class="shell timeline-wrap"><aside class="timeline-index"><div class="eyebrow">The timeline</div><h2>Each step<br>adds a tool.</h2><p>Select an entry to open a little more detail.</p><a class="button button-dark" href="./about.html">More about me ↗</a></aside>${timelineMarkup([...work, ...education])}</section>`;
 } else if (page === "contact") {
   scene.innerHTML = `<section class="shell contact-canvas"><div class="contact-copy"><div class="eyebrow">Have a project or opportunity?</div><h1 class="display">Let’s make<br>something<br><span>useful.</span></h1><p>I’m glad to connect about digital projects, learning opportunities and work that helps people.</p><a class="button button-dark contact-mail-cta" href="mailto:${LINKS.email}" data-cursor="email">Say hello <span>↗</span></a></div><div class="contact-links"><a class="contact-link" href="mailto:${LINKS.email}" data-cursor="email"><span>Email<small>${LINKS.email}</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.instagram}" target="_blank" rel="noreferrer"><span>Instagram<small>Find me on Instagram</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.linkedin}" target="_blank" rel="noreferrer"><span>LinkedIn<small>Connect with me</small></span><span class="contact-symbol">↗</span></a><a class="contact-link" href="${LINKS.github}" target="_blank" rel="noreferrer"><span>GitHub<small>See what I’m building</small></span><span class="contact-symbol">↗</span></a></div><div class="contact-emblem" data-cursor="drag" role="img" aria-label="Drag the mark." tabindex="0"><video class="wall-video" autoplay muted loop playsinline poster="https://images.pexels.com/videos/8516677/free-video-8516677.jpg?auto=compress&cs=tinysrgb&w=1000"><source src="https://videos.pexels.com/video-files/8516677/8516677-hd_1080_1920_25fps.mp4" type="video/mp4"></video><strong>DF</strong><span class="drag-tip">Drag the mark</span></div><p class="wall-credit">Plant-shadow footage · <a href="https://www.pexels.com/video/shadow-of-a-plant-moving-on-a-white-wall-8516677/" target="_blank" rel="noreferrer">Hanna Pad / Pexels ↗</a></p></section>`;
+}
+
+const projectShowcaseSections = [...document.querySelectorAll("[data-project-section]")];
+if (projectShowcaseSections.length && "IntersectionObserver" in window) {
+  const projectNavItems = [...document.querySelectorAll("[data-project-nav]")];
+  const projectSectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => entry.target.classList.toggle("is-in-view", entry.isIntersecting));
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!visible) return;
+    const activeIndex = projectShowcaseSections.indexOf(visible.target);
+    projectNavItems.forEach((link, index) => {
+      if (index === activeIndex) link.setAttribute("aria-current", "location");
+      else link.removeAttribute("aria-current");
+      link.classList.toggle("is-selected", index === activeIndex);
+    });
+  }, { rootMargin: "-35% 0px -50% 0px", threshold: [0, .15, .35, .65] });
+  projectShowcaseSections.forEach((section) => projectSectionObserver.observe(section));
 }
 
 if (singlePage) {
@@ -442,7 +550,7 @@ if (singlePage) {
         <nav class="archive-file-list" aria-label="Project directories">${projectIndex}</nav>
         <div class="archive-terminal-prompt" aria-hidden="true"><span>$</span> open <b class="archive-command-target">porchlight-support-finder</b><i class="terminal-cursor">_</i></div>
         <div class="archive-terminal-foot"><span>SCROLL OR SELECT A DIRECTORY</span><span class="terminal-identity">DF <i>+</i> &#123; &#125;</span></div>
-        <div class="archive-cursor-preview" aria-hidden="true"><img alt=""><span>PROJECT 01</span></div>
+        <div class="archive-cursor-preview" aria-hidden="true"><img alt="" loading="lazy" decoding="async" width="700" height="450"><span>PROJECT 01</span></div>
       </div>
     </div>
     <div class="archive-progress" aria-live="polite"><b>01</b><i>/</i><span>05</span></div>
@@ -463,6 +571,23 @@ if (singlePage) {
 
 if (page === "home") {
   const hero = document.querySelector(".home-hero");
+  hero.insertAdjacentHTML("beforeend", '<div class="hero-spotlight" aria-hidden="true"></div>');
+  const yearWidget = document.createElement("section");
+  yearWidget.className = "year-progress shell reveal";
+  yearWidget.setAttribute("aria-label", "Live year progress");
+  yearWidget.innerHTML = `<div class="year-copy"><span class="eyebrow">A YEAR IN MOTION</span><h2><b class="year-number"></b> IS <b class="year-percent"></b> COMPLETE</h2><p><b class="year-remaining"></b> DAYS REMAINING</p></div><div class="year-segments" role="img"></div>`;
+  (document.querySelector(".home-band") || document.querySelector(".archive-end"))?.before(yearWidget);
+  yearWidget.querySelector(".year-segments").innerHTML = Array.from({ length: 48 }, () => "<i></i>").join("");
+  const updateYearWidget = () => {
+    const now = new Date(), start = new Date(now.getFullYear(), 0, 1), end = new Date(now.getFullYear() + 1, 0, 1);
+    const ratio = (now - start) / (end - start), percent = Math.floor(ratio * 100);
+    yearWidget.querySelector(".year-number").textContent = now.getFullYear();
+    yearWidget.querySelector(".year-percent").textContent = `${percent}%`;
+    yearWidget.querySelector(".year-remaining").textContent = Math.ceil((end - now) / 86400000);
+    yearWidget.querySelector(".year-segments").setAttribute("aria-label", `${percent}% of ${now.getFullYear()} complete`);
+    yearWidget.querySelectorAll("i").forEach((segment, index) => segment.classList.toggle("is-complete", index < ratio * 48));
+  };
+  updateYearWidget(); setInterval(updateYearWidget, 60000);
   const notebook = hero.querySelector("[data-notebook]");
   notebook.innerHTML = `<span class="book-spread" aria-hidden="true"><span class="book-page book-page-left"><span class="book-page-kicker">DANIEL FASAN <i>01</i></span><strong>DANIEL<br>FASAN.</strong><span class="book-page-specialty">DIGITAL SOFTWARE<br>DEVELOPMENT</span><span class="book-page-rule"></span><span class="book-page-footer">IDEAS INTO INTERFACES</span></span><span class="book-page book-page-right"><span class="book-page-kicker">INSIDE THE WORKSPACE <i>02</i></span><span class="book-modules"><span class="book-module"><i>&lt;/&gt;</i><small>CODE</small></span><span class="book-module"><i class="module-web">▱</i><small>WEB</small></span><span class="book-module"><i class="module-data">▥</i><small>DATA</small></span><span class="book-module"><i class="module-system">◎</i><small>SYSTEMS</small></span></span><span class="book-page-footer">A DIGITAL PRACTICE</span></span></span><span class="book-cover"><span class="book-cover-front"><span class="book-cover-top">A DIGITAL NOTEBOOK</span><span class="book-cover-ring" aria-hidden="true"></span><span class="book-sun" aria-hidden="true"></span><span class="book-cover-title">IDEAS<br>INTO<br>INTERFACES.</span><span class="book-cover-index">DF / 01</span></span><span class="book-cover-inside"><span>DF</span><small>THOUGHTS<br>IN MOTION</small></span></span>`;
   hero.insertAdjacentHTML("afterbegin", `<svg class="hero-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g><g class="ambient-orbit ambient-orbit-fine"><path d="M169 148c135-80 326-55 429 57 90 99 87 242-6 327-72 66-184 81-266 35-62-35-89-99-66-152 21-49 75-73 123-55"/><path d="M136 606c91 101 238 143 370 106"/></g></svg>`);
@@ -509,7 +634,7 @@ if (singlePage) {
     if (visible) setActiveChapter(visible.target.id);
   }, { rootMargin: "-30% 0px -50% 0px", threshold: [0, .15, .4, .7] });
   chapterElements.forEach((section) => chapterObserver.observe(section));
-  document.querySelectorAll('.nav-link[href^="#"],.footer-links a[href^="#"],.brand[href^="#"],.archive-end-links a[href^="#"]').forEach((link) => link.addEventListener("click", (event) => {
+  document.querySelectorAll('.nav-link[href^="#"],.footer-links a[href^="#"],.brand[href^="#"],.archive-end-links a[href^="#"],.hero-actions a[href^="#"],.contact-core-actions a[href^="#"]').forEach((link) => link.addEventListener("click", (event) => {
     const target = document.querySelector(link.hash);
     if (!target) return;
     event.preventDefault();
@@ -518,24 +643,46 @@ if (singlePage) {
     document.querySelector(".nav-links")?.classList.remove("open");
     document.querySelector(".menu-toggle")?.setAttribute("aria-expanded", "false");
   }));
-  const scrollChapterMotion = () => {
-    const hero = document.querySelector(".home-hero");
-    const heroProgress = Math.max(0, Math.min(1, scrollY / Math.max(1, hero.offsetHeight)));
-    hero.style.setProperty("--hero-scroll", heroProgress.toFixed(3));
-    const timeline = document.querySelector(".journey-timeline");
+  const hero = document.querySelector(".home-hero");
+  const timeline = document.querySelector(".journey-timeline");
+  let heroHeight = 1;
+  let timelineTop = 0;
+  let timelineHeight = 1;
+  let chapterViewportHeight = innerHeight;
+  const measureChapterMotion = () => {
+    heroHeight = Math.max(1, hero.offsetHeight);
+    chapterViewportHeight = innerHeight;
     if (timeline) {
       const rect = timeline.getBoundingClientRect();
-      timeline.style.setProperty("--timeline-draw", Math.max(0, Math.min(1, (innerHeight * .78 - rect.top) / Math.max(1, rect.height * .8))).toFixed(3));
+      timelineTop = scrollY + rect.top;
+      timelineHeight = Math.max(1, rect.height);
     }
   };
+  const scrollChapterMotion = () => {
+    const heroProgress = Math.max(0, Math.min(1, scrollY / heroHeight));
+    hero.style.setProperty("--hero-scroll", heroProgress.toFixed(3));
+    if (timeline) {
+      const timelineDraw = (scrollY + chapterViewportHeight * .78 - timelineTop) / Math.max(1, timelineHeight * .8);
+      timeline.style.setProperty("--timeline-draw", Math.max(0, Math.min(1, timelineDraw)).toFixed(3));
+    }
+  };
+  window.addEventListener("resize", measureChapterMotion, { passive: true });
+  window.addEventListener("load", measureChapterMotion, { once: true });
+  measureChapterMotion();
   window.addPortfolioScrollTask(scrollChapterMotion);
   scrollChapterMotion();
 }
+
+refreshPortfolioScrollMetrics();
 
 const interactiveHeadings = [...document.querySelectorAll(".hero-title, .project-intro h2, .home-band h2, .journey-chapter h1, .journey-chapter h2, .journey-chapter h3, .contact-copy h2, .archive-title, .archive-story h2")];
 interactiveHeadings.forEach((heading) => {
   heading.classList.add("interactive-heading");
   if (heading.classList.contains("hero-title")) return;
+  if (heading.closest(".archive-story")) {
+    heading.setAttribute("aria-label", heading.textContent);
+    return;
+  }
   let letterIndex = 0;
   const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
   const textNodes = [];
@@ -621,7 +768,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// Scroll reveals use clipping and upward travel rather than opacity fades.
+// Scroll reveals use a compositor-friendly fade and upward travel.
 const revealObserver = new IntersectionObserver(
   (entries) =>
     entries.forEach((entry) => {
@@ -652,12 +799,20 @@ notebook?.addEventListener("click", () => {
 if (hero && matchMedia("(pointer:fine)").matches) {
   const orbit = hero.querySelector(".hero-orbit");
   const card = hero.querySelector(".orbit-card");
+  const spotlight = hero.querySelector(".hero-spotlight");
+  let heroBounds = hero.getBoundingClientRect();
+  window.addEventListener("resize", () => { heroBounds = hero.getBoundingClientRect(); }, { passive: true });
+  let pointerFrame = 0;
   hero.addEventListener("pointermove", (event) => {
-    const bounds = hero.getBoundingClientRect();
-    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
-    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
-    orbit.style.translate = `${x * -13}px ${y * -11}px`;
-    orbit.style.rotate = `${x * 2}deg`;
+    if (pointerFrame) cancelAnimationFrame(pointerFrame);
+    pointerFrame = requestAnimationFrame(() => {
+    const x = (event.clientX - heroBounds.left) / heroBounds.width - 0.5;
+    const y = (event.clientY - heroBounds.top) / heroBounds.height - 0.5;
+    spotlight.style.setProperty("--spot-x", `${event.clientX - heroBounds.left}px`);
+    spotlight.style.setProperty("--spot-y", `${event.clientY - heroBounds.top}px`);
+    if (notebook?.classList.contains("is-open")) return;
+    orbit.style.translate = `${x * -8}px ${y * -7}px`;
+    orbit.style.rotate = `${x}deg`;
     const note = card.getBoundingClientRect();
     const nx = Math.max(
       -1,
@@ -672,6 +827,7 @@ if (hero && matchMedia("(pointer:fine)").matches) {
     card.style.setProperty("--note-tilt", `${nx * 3}deg`);
     orbit.style.setProperty("--ring-shift-x", `${nx * -5}px`);
     orbit.style.setProperty("--ring-shift-y", `${ny * -5}px`);
+    });
   });
   hero.addEventListener("pointerleave", () => {
     card.style.removeProperty("--note-x");
@@ -882,6 +1038,7 @@ function setMusicCollapsed(collapsed) {
   musicCollapse.textContent = collapsed ? "+" : "−";
 }
 function showMusicPlayer() {
+  showVerse(false);
   if (!musicPlayer.classList.contains("is-open")) setMusicCollapsed(matchMedia("(max-width: 600px)").matches);
   musicPlayer.classList.add("is-open");
   musicPlayer.setAttribute("aria-hidden", "false");
@@ -1266,20 +1423,33 @@ updateRail();
 // The Projects route is one scroll-driven archive: every chapter shares the same viewport mask.
 const archiveJourney = document.querySelector(".archive-journey");
 const archiveScenes = [...document.querySelectorAll("[data-archive-scene]")];
+const archivePresentation = document.querySelector(".archive-presentation");
+const archivePage = archiveJourney?.closest(".archive-page");
 const archiveProgress = document.querySelector(".archive-progress");
 const archiveIndexItems = [...document.querySelectorAll("[data-archive-go]")];
-const archiveNames = ["PORCHLIGHT SUPPORT FINDER", "CONFERENCE TICKET GENERATOR", "DIGITALBANK", "FRONT-END MENTOR PROJECTS", "PYTHON / DATA PROJECTS"];
+const archiveNames = document.documentElement.dataset.projectCarousel === "true"
+  ? ["PORCHLIGHT", "CONFERENCE TICKETS", "DIGITALBANK", "FRONT-END MENTOR", "PYTHON / DATA"]
+  : ["PORCHLIGHT SUPPORT FINDER", "CONFERENCE TICKET GENERATOR", "DIGITALBANK", "FRONT-END MENTOR PROJECTS", "PYTHON / DATA PROJECTS"];
 const archiveCommandTarget = document.querySelector(".archive-command-target");
 const archiveTerminal = document.querySelector(".archive-terminal");
 const archiveCursorPreview = document.querySelector(".archive-cursor-preview");
 const archiveCursorImage = archiveCursorPreview?.querySelector("img");
 const archiveCursorLabel = archiveCursorPreview?.querySelector("span");
+const archivePrevious = document.querySelector(".archive-arrow-prev");
+const archiveNext = document.querySelector(".archive-arrow-next");
+const archiveCarouselPage = document.documentElement.dataset.projectCarousel === "true";
+const archiveMobilePreference = matchMedia("(max-width:600px)");
 let archivePreviewFrame = 0;
 let archivePreviewPoint = { x: 0, y: 0 };
 let reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let archiveStart = 0;
 let archiveTravel = 1;
 let archiveHeight = 0;
+let archiveViewportHeight = innerHeight;
+let archiveSideOffset = 520;
+let archiveMobileTargets = [];
+let archiveMobileMax = 0;
+let archiveStageInView = false;
 const archiveMotionPreference = matchMedia("(prefers-reduced-motion: reduce)");
 let previousArchiveActive = -1;
 let previousArchiveIncoming = -1;
@@ -1290,6 +1460,15 @@ function measureArchive() {
   archiveStart = window.scrollY + archiveJourney.getBoundingClientRect().top;
   archiveHeight = archiveJourney.offsetHeight;
   archiveTravel = Math.max(1, archiveHeight - window.innerHeight);
+  archiveViewportHeight = window.innerHeight;
+  if (archiveCarouselPage && archivePresentation && archiveScenes.length) {
+    archiveSideOffset = Math.min(archivePresentation.clientWidth * .48, archiveScenes[0].offsetWidth * .82);
+    archiveMobileMax = Math.max(0, archivePresentation.scrollWidth - archivePresentation.clientWidth);
+    archiveMobileTargets = archiveScenes.map((scene) => Math.min(
+      archiveMobileMax,
+      Math.max(0, scene.offsetLeft - (archivePresentation.clientWidth - scene.offsetWidth) / 2),
+    ));
+  }
 }
 function loadArchiveSceneImages(index) {
   archiveScenes[index]?.querySelectorAll("img[data-src]").forEach((image) => {
@@ -1298,23 +1477,69 @@ function loadArchiveSceneImages(index) {
   });
 }
 window.addEventListener("resize", measureArchive, { passive: true });
-function updateArchive() {
-  if (!archiveJourney || !archiveScenes.length) return;
-  if (reducedMotion) {
-    if (reducedArchiveReady) return;
-    archiveScenes.forEach((item) => {
-      item.classList.remove("is-active");
-      item.setAttribute("aria-hidden", "false");
-      item.inert = false;
+function syncArchiveActive(active) {
+  if (active === previousArchiveActive) return;
+  previousArchiveActive = active;
+  archiveScenes.forEach((item, index) => {
+    item.classList.toggle("is-active", index === active);
+    item.setAttribute("aria-hidden", String(index !== active));
+    item.inert = index !== active;
+    if (archiveCarouselPage) item.style.zIndex = String(index === active ? 3 : Math.abs(index - active) === 1 ? 2 : 1);
+  });
+  const number = String(active + 1).padStart(2, "0");
+  archiveProgress?.querySelector("b")?.replaceChildren(number);
+  const currentLabel = document.querySelector(".archive-current-label strong");
+  if (currentLabel) currentLabel.textContent = `${number} / ${archiveNames[active]}`;
+  if (archiveCommandTarget) archiveCommandTarget.textContent = `open ${archiveFoldersForCommand(active)}`;
+  const firstNearby = archiveCarouselPage ? active - 1 : active;
+  const lastNearby = Math.min(active + 1, archiveScenes.length - 1);
+  for (let index = Math.max(0, firstNearby); index <= lastNearby; index += 1) loadArchiveSceneImages(index);
+  archiveIndexItems.forEach((button, index) => {
+    button.setAttribute("aria-current", index === active ? "step" : "false");
+    button.classList.toggle("is-selected", index === active);
+  });
+  if (archivePrevious) archivePrevious.disabled = active === 0;
+  if (archiveNext) archiveNext.disabled = active === archiveScenes.length - 1;
+}
+function updateArchiveCarousel() {
+  const y = window.scrollY;
+  archiveStageInView = y + archiveViewportHeight > archiveStart && y < archiveStart + archiveHeight;
+  archivePage?.classList.toggle("archive-nav-on", archiveStageInView);
+  if (archiveMobilePreference.matches) {
+    const left = archivePresentation?.scrollLeft || 0;
+    let active = 0;
+    let nearest = Infinity;
+    archiveMobileTargets.forEach((target, index) => {
+      const distance = Math.abs(target - left);
+      if (distance < nearest) {
+        nearest = distance;
+        active = index;
+      }
     });
-    archiveScenes.forEach((_, index) => loadArchiveSceneImages(index));
-    reducedArchiveReady = true;
+    syncArchiveActive(active);
     return;
   }
-  reducedArchiveReady = false;
+  const progress = Math.min(1, Math.max(0, (y - archiveStart) / archiveTravel));
+  const position = progress * (archiveScenes.length - 1);
+  const active = Math.min(archiveScenes.length - 1, Math.round(position));
+  archiveScenes.forEach((item, index) => {
+    const distance = index - position;
+    const absoluteDistance = Math.abs(distance);
+    const direction = Math.sign(distance);
+    const beyondAdjacent = Math.min(1, Math.max(0, absoluteDistance - 1));
+    const x = direction * archiveSideOffset * (Math.min(absoluteDistance, 1) + beyondAdjacent * .72);
+    const scale = absoluteDistance <= 1 ? 1 - absoluteDistance * .15 : .85 - beyondAdjacent * .1;
+    const rotation = direction * (Math.min(absoluteDistance, 1) * 3 + beyondAdjacent * 2);
+    const opacity = absoluteDistance <= 1 ? 1 - absoluteDistance * .45 : .55 * (1 - beyondAdjacent);
+    item.style.transform = `translate3d(${x.toFixed(1)}px,0,0) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(2)}deg)`;
+    item.style.opacity = Math.max(0, opacity).toFixed(3);
+  });
+  syncArchiveActive(active);
+}
+function updateArchiveLegacy() {
   const top = archiveStart - window.scrollY;
   const progress = Math.min(1, Math.max(0, (window.scrollY - archiveStart) / archiveTravel));
-  archiveJourney.closest(".archive-page")?.classList.toggle("archive-nav-on", top < innerHeight * 0.82 && top + archiveHeight > innerHeight * 0.18);
+  archivePage?.classList.toggle("archive-nav-on", top < archiveViewportHeight * .82 && top + archiveHeight > archiveViewportHeight * .18);
   const position = progress * (archiveScenes.length - 1);
   const active = Math.min(archiveScenes.length - 1, Math.round(position));
   const outgoing = Math.min(archiveScenes.length - 1, Math.floor(position));
@@ -1326,50 +1551,72 @@ function updateArchive() {
     item.style.setProperty("--archive-opacity", opacity.toFixed(3));
     item.style.setProperty("--archive-enter", enter.toFixed(3));
     item.style.setProperty("--archive-x", `${(1 - enter) * 6 - leave * 4}vw`);
-    item.style.setProperty("--archive-scale", (0.965 + enter * 0.035 - leave * 0.025).toFixed(3));
-    item.style.setProperty("--archive-rotate", `${((1 - enter) * 0.65 - leave * 1.1).toFixed(2)}deg`);
+    item.style.setProperty("--archive-scale", (0.965 + enter * .035 - leave * .025).toFixed(3));
+    item.style.setProperty("--archive-rotate", `${((1 - enter) * .65 - leave * 1.1).toFixed(2)}deg`);
     if (incoming !== previousArchiveIncoming || outgoing !== previousArchiveOutgoing) item.style.zIndex = String(index === incoming ? 3 : index === outgoing ? 2 : 1);
-    if (active !== previousArchiveActive) {
-      item.classList.toggle("is-active", index === active);
-      item.setAttribute("aria-hidden", String(index !== active));
-      item.inert = index !== active;
-    }
   });
-  if (active !== previousArchiveActive) {
-    previousArchiveActive = active;
-    const number = String(active + 1).padStart(2, "0");
-    archiveProgress?.querySelector("b")?.replaceChildren(number);
-    const currentLabel = document.querySelector(".archive-current-label strong");
-    if (currentLabel) currentLabel.textContent = `${number} / ${archiveNames[active]}`;
-    if (archiveCommandTarget) archiveCommandTarget.textContent = `open ${archiveFoldersForCommand(active)}`;
-    loadArchiveSceneImages(active);
-    loadArchiveSceneImages(Math.min(active + 1, archiveScenes.length - 1));
-    archiveIndexItems.forEach((button, index) => {
-      button.setAttribute("aria-current", index === active ? "step" : "false");
-      button.classList.toggle("is-selected", index === active);
-    });
-  }
+  syncArchiveActive(active);
   previousArchiveIncoming = incoming;
   previousArchiveOutgoing = outgoing;
+}
+function updateArchive() {
+  if (!archiveJourney || !archiveScenes.length) return;
+  if (reducedMotion) {
+    if (reducedArchiveReady) return;
+    archiveStageInView = false;
+    archiveScenes.forEach((item) => {
+      item.classList.remove("is-active");
+      item.setAttribute("aria-hidden", "false");
+      item.inert = false;
+    });
+    archiveScenes.forEach((_, index) => loadArchiveSceneImages(index));
+    reducedArchiveReady = true;
+    return;
+  }
+  reducedArchiveReady = false;
+  if (archiveCarouselPage) updateArchiveCarousel();
+  else updateArchiveLegacy();
 }
 function archiveFoldersForCommand(index) {
   return archiveIndexItems[index]?.dataset.command || archiveNames[index]?.toLowerCase().replaceAll(" ", "-") || "projects";
 }
 window.addPortfolioScrollTask(updateArchive);
-archiveIndexItems.forEach((button) => button.addEventListener("click", () => {
+function scrollToArchive(index, behavior = "smooth") {
+  const target = Math.max(0, Math.min(archiveScenes.length - 1, index));
+  if (archiveCarouselPage && archiveMobilePreference.matches) {
+    archivePresentation?.scrollTo({ left: archiveMobileTargets[target] || 0, behavior });
+    return;
+  }
+  window.scrollTo({
+    top: archiveStart + archiveTravel * target / Math.max(1, archiveScenes.length - 1),
+    behavior,
+  });
+}
+archiveIndexItems.forEach((button) => button.addEventListener("click", (event) => {
   if (!archiveJourney) return;
   const index = Number(button.dataset.archiveGo);
   if (reducedMotion) {
+    if (archiveCarouselPage) return;
     archiveScenes[index]?.scrollIntoView({ behavior: "auto", block: "start" });
     return;
   }
-  const bounds = archiveJourney.getBoundingClientRect();
-  const travel = Math.max(0, archiveJourney.offsetHeight - innerHeight);
-  window.scrollTo({
-    top: scrollY + bounds.top + travel * index / Math.max(1, archiveScenes.length - 1),
-    behavior: "smooth",
-  });
+  event.preventDefault();
+  scrollToArchive(index);
 }));
+archivePrevious?.addEventListener("click", () => scrollToArchive(previousArchiveActive - 1));
+archiveNext?.addEventListener("click", () => scrollToArchive(previousArchiveActive + 1));
+archivePresentation?.addEventListener("scroll", schedulePortfolioScroll, { passive: true });
+document.addEventListener("keydown", (event) => {
+  if (!archiveCarouselPage || reducedMotion || !archiveStageInView || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  if (event.target.closest("input,textarea,select,[contenteditable]")) return;
+  event.preventDefault();
+  scrollToArchive(previousArchiveActive + (event.key === "ArrowRight" ? 1 : -1));
+});
+archiveMobilePreference.addEventListener?.("change", () => {
+  measureArchive();
+  if (archiveMobilePreference.matches && previousArchiveActive >= 0) archivePresentation?.scrollTo({ left: archiveMobileTargets[previousArchiveActive] || 0, behavior: "auto" });
+  updateArchive();
+});
 archiveMotionPreference.addEventListener?.("change", (event) => {
   reducedMotion = event.matches;
   reducedArchiveReady = false;
@@ -1411,6 +1658,7 @@ updateArchive();
 window.addEventListener("load", () => {
   measureRail();
   measureArchive();
+  refreshPortfolioScrollMetrics();
   schedulePortfolioScroll();
 }, { once: true });
 
