@@ -11,12 +11,12 @@
   road.className = "journey-road";
   road.setAttribute("aria-label", "Portfolio journey scrollbar");
   road.innerHTML = `<span class="road-caption" aria-hidden="true">JOURNEY</span><div class="road-track"><i class="road-centerline" aria-hidden="true"></i><div class="road-markers"></div><div class="road-car" role="scrollbar" tabindex="0" aria-label="Portfolio scroll position. Drag the car or use arrow keys." aria-controls="scene" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><svg class="road-car-art" viewBox="0 0 144 64" aria-hidden="true"><defs><linearGradient id="fastback-paint" x1="0" x2=".85" y1="0" y2="1"><stop stop-color="var(--car-highlight,#a9aaa8)"/><stop offset=".44" stop-color="var(--car-body)"/><stop offset="1" stop-color="var(--car-shadow,#353738)"/></linearGradient><linearGradient id="fastback-glass" x1="0" x2="1" y1="0" y2="1"><stop stop-color="var(--car-glass,#192124)"/><stop offset="1" stop-color="var(--car-window)"/></linearGradient></defs><path class="car-body" fill="url(#fastback-paint)" d="M8 41.8c1.2-3.7 4.6-6.5 9.3-7.7l13.7-3.6 15.4-15.8c3.4-3.5 7.1-5.2 12.8-5.2h34.2c7 0 12.1 1.8 17.6 6.5l14 11.5 8.1 3.2c4.2 1.7 6.2 4.7 6.2 8.7v5.2h-15.5a12.2 12.2 0 0 0-23.8 0H49.2a12.2 12.2 0 0 0-23.8 0H8z"/><path class="car-window" fill="url(#fastback-glass)" d="m49.3 16.3-12.6 13h23V13h-5.8c-1.8 0-3.2.8-4.6 3.3zm14-3.3v16.3h48.1l-12-10.1c-4.4-3.7-8.3-6.2-15-6.2z"/><path class="car-glass-line" d="M60 14v15m3.3-15v15"/><path class="car-highlight" d="M19 35.6 42 30.1m26-17.4h17"/><path class="car-grille" d="M8.8 37.1h7.4v6.2H8.2m122.5-8.5 6.2 2.8v5.7h-9.4"/><path class="car-headlight" d="m10.4 35.1 7.9-2.2-1.2 3.5-7.4 2z"/><path class="car-taillight" d="m132.3 31.1 6.1 2.2v2.1l-5.4-1.5z"/><path class="car-accent" d="M22 45h25m50 0h16"/><circle class="car-wheel" cx="37.4" cy="45" r="11.1"/><circle class="car-wheel" cx="111" cy="45" r="11.1"/><circle class="car-hub" cx="37.4" cy="45" r="3.1"/><circle class="car-hub" cx="111" cy="45" r="3.1"/><g class="car-spokes"><path d="M37.4 35.1v19.8m-9.9-9.9h19.8m-17-7 14 14m0-14-14 14"/></g><g class="car-spokes car-spokes-front"><path d="M111 35.1v19.8m-9.9-9.9h19.8m-17-7 14 14m0-14-14 14"/></g><path class="car-splitter" d="M6.7 44.4h18.8m97.7 0h18.1"/></svg><span class="car-hit-label" aria-hidden="true">DRAG TO SCROLL</span></div><span class="road-coordinate road-coordinate-top" aria-hidden="true">00</span><span class="road-coordinate road-coordinate-bottom" aria-hidden="true">100</span></div>`;
+  road.querySelectorAll(".road-caption,.road-centerline,.road-markers,.road-coordinate").forEach((node) => node.remove());
   document.body.append(road);
   document.documentElement.classList.add("has-journey-road");
 
   const track = road.querySelector(".road-track");
   const car = road.querySelector(".road-car");
-  const markersNode = road.querySelector(".road-markers");
   let anchors = [];
   let frame = 0;
   let motionFrame = 0;
@@ -25,8 +25,6 @@
   let carVelocity = 0;
   let carTravel = 0;
   let pageMaxScroll = 0;
-  let markers = [];
-  let previousNearest = -1;
   let previousPercent = -1;
   let stopTimer = 0;
   let previousY = scrollY;
@@ -97,12 +95,6 @@
     }
     add("END", document.querySelector("#site-footer"), "contact");
     anchors = anchorsNext.sort((a, b) => a.top - b.top);
-    markersNode.innerHTML = anchors.map((anchor, index) =>
-      `<button class="road-marker" type="button" style="--marker-index:${index}" aria-label="Go to ${anchor.label}" data-road-index="${index}"><i aria-hidden="true"></i><span aria-hidden="true">${anchor.label}</span></button>`,
-    ).join("");
-    markers = [...markersNode.querySelectorAll(".road-marker")];
-    anchors.forEach((anchor, index) => markers[index]?.style.setProperty("--marker-y", `${Math.min(100, Math.max(0, anchor.top / Math.max(1, pageMaxScroll) * 100))}%`));
-    previousNearest = -1;
     update();
   }
 
@@ -122,11 +114,8 @@
       const distance = Math.abs(anchor.top - scrollY);
       if (distance < nearestDistance) { nearestDistance = distance; nearest = index; }
     });
-    if (nearest !== previousNearest) {
-      markers.forEach((marker, index) => marker.toggleAttribute("data-active", index === nearest));
-      previousNearest = nearest;
-    }
-    road.dataset.region = anchors[nearest]?.region || "home";
+    const region = anchors[nearest]?.region || "home";
+    if (road.dataset.region !== region) road.dataset.region = region;
 
     const delta = scrollY - previousY;
     previousY = scrollY;
@@ -178,18 +167,11 @@
   window.addEventListener("load", () => { buildAnchors(); requestUpdate(); }, { once: true });
 
   track.addEventListener("click", (event) => {
-    if (event.target.closest(".road-car,.road-marker")) return;
+    if (event.target.closest(".road-car")) return;
     const bounds = track.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
     window.scrollTo({ top: ratio * pageMaxScroll, behavior: "smooth" });
   });
-  markersNode.addEventListener("click", (event) => {
-    const marker = event.target.closest("[data-road-index]");
-    if (!marker) return;
-    const anchor = anchors[Number(marker.dataset.roadIndex)];
-    if (anchor) window.scrollTo({ top: anchor.top, behavior: "smooth" });
-  });
-
   let dragging = false;
   let startY = 0;
   let startScroll = 0;

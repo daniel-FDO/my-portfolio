@@ -729,7 +729,19 @@ if (page === "home") {
   portrait.setAttribute("aria-hidden", "true");
   portrait.innerHTML = '<span class="hero-portrait-glow"></span><img class="hero-portrait" src="./assets/mypotrait.png" alt="" width="1292" height="1217" fetchpriority="high" decoding="async">';
   heroTitle.after(portrait);
-  hero.insertAdjacentHTML("beforeend", '<p class="hero-identity-capsule"><strong>DANIEL FASAN</strong><span>DIGITAL SOFTWARE DEVELOPMENT</span></p><p class="hero-technical-label"><span>BASED IN THE UK</span><span>DIGITAL PORTFOLIO / 2026</span></p>');
+  hero.insertAdjacentHTML("beforeend", '<div class="hero-clock-widget" role="group" aria-label="Local time in Europe, London"><svg class="local-clock-icon" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="14.5"/><path class="clock-hour-hand" d="M18 9v9h6"/><path class="clock-minute-hand" d="M18 18V7"/><circle class="clock-center" cx="18" cy="18" r="1.7"/></svg><span class="local-clock-copy"><span class="widget-kicker">LOCAL TIME</span><span class="local-clock-readout"><time class="local-time">--:--</time><span class="local-time-zone"></span></span></span></div><div class="hero-location-widget" role="group" aria-label="Kent, United Kingdom"><svg class="location-icon" viewBox="0 0 40 40" aria-hidden="true"><path class="location-map" d="m4.5 11 10.2-4.5 10.4 4 10.4-4v22l-10.4 4.5-10.4-4L4.5 33z"/><path class="location-map-fold" d="M14.7 6.5v22.4m10.4-18.4v22.5"/><path class="location-pin" d="M20 5.2c-5 0-9 3.9-9 8.8 0 6.4 9 17.1 9 17.1s9-10.7 9-17.1c0-4.9-4-8.8-9-8.8Z"/><circle class="location-pin-core" cx="20" cy="14" r="3.2"/></svg><span class="location-copy"><span class="widget-kicker">LOCATION</span><span class="location-name">Kent, United Kingdom</span></span></div>');
+  const localTime = hero.querySelector(".local-time");
+  const localTimeZone = hero.querySelector(".local-time-zone");
+  const londonTime = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const londonZone = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", timeZoneName: "short" });
+  const updateLondonClock = () => {
+    const now = new Date();
+    localTime.textContent = londonTime.format(now);
+    localTime.dateTime = now.toISOString();
+    localTimeZone.textContent = londonZone.formatToParts(now).find((part) => part.type === "timeZoneName")?.value || "UK";
+  };
+  updateLondonClock();
+  window.setInterval(updateLondonClock, 60_000);
   const introLine = hero.querySelector(".hero-copy .eyebrow");
   if (introLine) introLine.hidden = true;
   const helloLink = hero.querySelector(".hero-actions .button-outline");
@@ -760,7 +772,7 @@ if (page === "home") {
   updateYearWidget(); setInterval(updateYearWidget, 60000);
   const notebook = hero.querySelector("[data-notebook]");
   notebook.innerHTML = `<span class="book-spread" aria-hidden="true"><span class="book-page book-page-left"><span class="book-page-kicker">DANIEL FASAN <i>01</i></span><strong>DANIEL<br>FASAN.</strong><span class="book-page-specialty">DIGITAL SOFTWARE<br>DEVELOPMENT</span><span class="book-page-rule"></span><span class="book-page-footer">IDEAS INTO INTERFACES</span></span><span class="book-page book-page-right"><span class="book-page-kicker">INSIDE THE WORKSPACE <i>02</i></span><span class="book-modules"><span class="book-module"><i>&lt;/&gt;</i><small>CODE</small></span><span class="book-module"><i class="module-web">▱</i><small>WEB</small></span><span class="book-module"><i class="module-data">▥</i><small>DATA</small></span><span class="book-module"><i class="module-system">◎</i><small>SYSTEMS</small></span></span><span class="book-page-footer">A DIGITAL PRACTICE</span></span></span><span class="book-cover"><span class="book-cover-front"><span class="book-cover-top">A DIGITAL NOTEBOOK</span><span class="book-cover-ring" aria-hidden="true"></span><span class="book-sun" aria-hidden="true"></span><span class="book-cover-title">IDEAS<br>INTO<br>INTERFACES.</span><span class="book-cover-index">DF / 01</span></span><span class="book-cover-inside"><span>DF</span><small>THOUGHTS<br>IN MOTION</small></span></span>`;
-  hero.insertAdjacentHTML("afterbegin", `<svg class="hero-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g><g class="ambient-orbit ambient-orbit-fine"><path d="M169 148c135-80 326-55 429 57 90 99 87 242-6 327-72 66-184 81-266 35-62-35-89-99-66-152 21-49 75-73 123-55"/><path d="M136 606c91 101 238 143 370 106"/></g></svg>`);
+  hero.insertAdjacentHTML("afterbegin", `<svg class="hero-ambient" viewBox="0 0 800 800" aria-hidden="true"><g class="ambient-orbit ambient-orbit-slow"><circle cx="400" cy="400" r="344"/><circle cx="400" cy="400" r="302"/><path d="M116 303C186 130 381 80 546 153s232 253 151 416c-80 162-285 225-440 128C105 602 57 438 116 303Z"/></g><g class="ambient-orbit ambient-orbit-mid"><path d="M96 467c4-141 110-249 256-267 105-13 214 28 275 109 54 73 54 162 1 221-53 60-151 78-240 44-77-29-122-91-114-154 8-57 62-96 125-88 50 7 82 42 78 83-3 31-28 53-58 52"/><path d="M92 540c114 120 283 163 431 100 88-37 144-105 158-189"/></g><g class="ambient-orbit ambient-orbit-fine"><path d="M169 148c135-80 326-55 429 57 90 99 87 242-6 327-72 66-184 81-266 35-62-35-89-99-66-152 21-49 75-73 123-55"/><path d="M136 606c91 101 238 143 370 106"/></g><g class="ambient-orbit ambient-orbit-sweep"><circle cx="400" cy="400" r="246"/><path d="M88 222h108M603 579h109M571 82v86M229 633v92"/></g></svg>`);
   const spotify = document.createElement("button");
   spotify.className = "spotify-object";
   spotify.type = "button";
@@ -966,11 +978,14 @@ notebook?.addEventListener("click", () => {
     open ? "Close Daniel's digital notebook" : "Open Daniel's digital notebook",
   );
 });
-if (hero && matchMedia("(pointer:fine)").matches) {
+if (hero && matchMedia("(pointer:fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   const orbit = hero.querySelector(".hero-orbit");
   const card = hero.querySelector(".orbit-card");
   const spotlight = hero.querySelector(".hero-spotlight");
   const portrait = hero.querySelector(".hero-portrait");
+  const heroTitle = hero.querySelector(".hero-title");
+  const ambient = hero.querySelector(".hero-ambient");
+  const portraitGlow = hero.querySelector(".hero-portrait-glow");
   let heroBounds = hero.getBoundingClientRect();
   window.addEventListener("resize", () => { heroBounds = hero.getBoundingClientRect(); }, { passive: true });
   let pointerFrame = 0;
@@ -981,8 +996,15 @@ if (hero && matchMedia("(pointer:fine)").matches) {
     const y = (event.clientY - heroBounds.top) / heroBounds.height - 0.5;
     spotlight.style.setProperty("--spot-x", `${event.clientX - heroBounds.left}px`);
     spotlight.style.setProperty("--spot-y", `${event.clientY - heroBounds.top}px`);
-    portrait.style.setProperty("--portrait-x", `${x * 7}px`);
-    portrait.style.setProperty("--portrait-y", `${y * 5}px`);
+    portrait.style.setProperty("--portrait-x", `${x * 26}px`);
+    portrait.style.setProperty("--portrait-y", `${y * 20}px`);
+    portrait.style.setProperty("--portrait-tilt", `${x * .8}deg`);
+    portraitGlow.style.setProperty("--glow-x", `${x * 15}px`);
+    portraitGlow.style.setProperty("--glow-y", `${y * 10}px`);
+    heroTitle.style.setProperty("--title-x", `${x * -9}px`);
+    heroTitle.style.setProperty("--title-y", `${y * -6}px`);
+    ambient.style.setProperty("--ambient-x", `${x * 12}px`);
+    ambient.style.setProperty("--ambient-y", `${y * 8}px`);
     if (notebook?.classList.contains("is-open")) return;
     orbit.style.translate = `${x * -8}px ${y * -7}px`;
     orbit.style.rotate = `${x}deg`;
@@ -1005,6 +1027,13 @@ if (hero && matchMedia("(pointer:fine)").matches) {
   hero.addEventListener("pointerleave", () => {
     portrait.style.removeProperty("--portrait-x");
     portrait.style.removeProperty("--portrait-y");
+    portrait.style.removeProperty("--portrait-tilt");
+    portraitGlow.style.removeProperty("--glow-x");
+    portraitGlow.style.removeProperty("--glow-y");
+    heroTitle.style.removeProperty("--title-x");
+    heroTitle.style.removeProperty("--title-y");
+    ambient.style.removeProperty("--ambient-x");
+    ambient.style.removeProperty("--ambient-y");
     card.style.removeProperty("--note-x");
     card.style.removeProperty("--note-y");
     card.style.removeProperty("--note-tilt");
