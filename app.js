@@ -262,10 +262,9 @@ const identityOpening = document.querySelector(".identity-opening");
 function startDriveIntro() {
   const root = document.documentElement;
   const forced = new URLSearchParams(location.search).get("intro") === "1";
-  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const requested = root.dataset.showIntro === "true" || forced;
   if (!identityOpening) return;
-  if (!INTRO_ENABLED || reducedMotion || !requested) {
+  if (!INTRO_ENABLED || !requested) {
     identityOpening.style.visibility = "hidden";
     identityOpening.style.pointerEvents = "none";
     requestAnimationFrame(() => identityOpening.remove());
@@ -285,7 +284,6 @@ function startDriveIntro() {
   });
   root.classList.add("intro-in-progress", "intro-scroll-lock");
   identityOpening.classList.add("is-active");
-  try { sessionStorage.setItem("df-identity-opening-seen", "1"); } catch {}
 
   const mountCar = () => {
     const source = document.querySelector(".road-car-art");

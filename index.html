@@ -8,16 +8,10 @@
       try {
         document.documentElement.dataset.theme =
           localStorage.getItem("portfolio-theme") || "day";
-        if (
-          !matchMedia("(prefers-reduced-motion: reduce)").matches &&
-          (new URLSearchParams(location.search).get("intro") === "1" ||
-            !sessionStorage.getItem("df-identity-opening-seen"))
-        ) {
-          document.documentElement.dataset.showIntro = "true";
-        }
       } catch {
         document.documentElement.dataset.theme = "day";
       }
+      document.documentElement.dataset.showIntro = "true";
     </script>
     <meta
       name="description"
